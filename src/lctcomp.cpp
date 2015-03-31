@@ -1,12 +1,16 @@
+#include "lctcomp.hpp"
+#include "cstdio"
+
 // Read pattern from comparators
-struct lct_pattern Comparator::patternRead ()
+struct Comparator::LCTpattern_t Comparator::patternRead ()
 {
-    lct_pattern pat;
+    LCTpattern_t pat;
     pat.halfstrips = serial.read (ADR_HALFSTRIPS);
     pat.compout    = 0x1 & (serial.read (ADR_PULSE_CTRL) >> 20);
+    return (pat);
 }
 
-int Comparator::printPattern (struct lct_pattern pattern)
+void Comparator::printPattern (struct Comparator::LCTpattern_t pattern)
 {
     for (int i=31; i>=0; i--)
         printf("%i", (pattern.halfstrips >> i) & 0x1);
@@ -14,7 +18,8 @@ int Comparator::printPattern (struct lct_pattern pattern)
 }
 
 // Check pattern, expect vs. read
-int Comparator::patternCheck (struct lct_pattern expect, struct lct_pattern read)
+int Comparator::patternCheck (struct Comparator::LCTpattern_t expect, struct
+        Comparator::LCTpattern_t read)
 {
     uint32_t diff = expect.halfstrips ^ read.halfstrips;
     int num_errors = __builtin_popcount (diff);
@@ -39,7 +44,7 @@ int Comparator::readCompoutErrcnt()
 
 void Comparator::resetHalfstripsErrcnt()
 {
-    uint8_t adr = ADR_PULSECTRL;
+    uint8_t adr = ADR_PULSE_CTRL;
     uint32_t status = serial.read (adr);
     status |= 0x1 << 8; //halfstrips_errcnt
     serial.write(adr, status);
@@ -49,7 +54,7 @@ void Comparator::resetHalfstripsErrcnt()
 
 void Comparator::resetCompoutErrcnt()
 {
-    uint8_t adr = ADR_PULSECTRL;
+    uint8_t adr = ADR_PULSE_CTRL;
     uint32_t status = serial.read (adr);
     status |= 0x1 << 9; //halfstrips_errcnt
     serial.write(adr, status);
@@ -57,9 +62,9 @@ void Comparator::resetCompoutErrcnt()
     serial.write(adr, status);
 }
 
-void Comparator::setPeakMode (pkmode peakmode)
+void Comparator::setPeakMode (pkmode_t peakmode)
 {
-    uint8_t adr = ADR_COMPCONFIG;
+    uint8_t adr = ADR_COMP_CONFIG;
     uint32_t pkmode_mask = ~(0x3 << 3);
     uint32_t status = serial.read(adr);
     status &= pkmode_mask;
@@ -67,9 +72,9 @@ void Comparator::setPeakMode (pkmode peakmode)
     serial.write(adr, status);
 }
 
-void Comparator::setPeakTime (pktime peaktime)
+void Comparator::setPeakTime (pktime_t peaktime)
 {
-    uint8_t adr = ADR_COMPCONFIG;
+    uint8_t adr = ADR_COMP_CONFIG;
     uint32_t pktime_mask = ~(0x7 << 0);
     uint32_t status = serial.read(adr);
     status &= pktime_mask;
@@ -79,7 +84,7 @@ void Comparator::setPeakTime (pktime peaktime)
 
 void Comparator::setPulseWidth (int width)
 {
-    uint8_t adr = ADR_COMPCONFIG;
+    uint8_t adr = ADR_COMP_CONFIG;
     width &= 0xF; // max 4 bits
     uint32_t pulsewidth_mask = ~(0xF << 1);
     uint32_t status = serial.read(adr);
@@ -90,7 +95,7 @@ void Comparator::setPulseWidth (int width)
 
 void Comparator::setBxDelay (int delay)
 {
-    uint8_t adr = ADR_COMPCONFIG;
+    uint8_t adr = ADR_COMP_CONFIG;
     delay &= 0x7; // max 3 bits
     uint32_t bxdelay_mask = ~(0x7 << 11);
     uint32_t status = serial.read(adr);
@@ -101,13 +106,13 @@ void Comparator::setBxDelay (int delay)
 
 void Comparator::setTriadPersist(int persist, bool persist1)
 {
-    uint8_t adr = ADR_COMPCONFIG;
+    uint8_t adr = ADR_COMP_CONFIG;
     persist  &= 0x7;  //max 3 bits
     persist1 &= 0x1;  //max 1 bits
     uint32_t persist_mask =  ~(0x7 << 15);
     uint32_t persist1_mask = ~(0x1 << 19);
 
-    status = serial.read(adr);
+    uint32_t status = serial.read(adr);
     status &= persist_mask;
     status &= persist1_mask;
 
@@ -117,12 +122,12 @@ void Comparator::setTriadPersist(int persist, bool persist1)
     serial.write(adr, status);
 }
 
-void Comparator::setPatternExpect (struct lct_pattern expect)
+void Comparator::setPatternExpect (struct Comparator::LCTpattern_t expect)
 {
     uint8_t adr = ADR_HALFSTRIPS_EXPECT;
     serial.write(adr, expect.halfstrips);
 
-    adr = ADR_PULSECTRL_IN;
+    adr = ADR_PULSE_CTRL;
     uint32_t status = serial.read(adr);
     status &= ~(0x1 << 14);
     status |= 0x1 & expect.compout;
@@ -131,17 +136,17 @@ void Comparator::setPatternExpect (struct lct_pattern expect)
 
 void Comparator::setLCTReset (bool state)
 {
-    uint8_t adr = ADR_COMPCONFIG;
+    uint8_t adr = ADR_COMP_CONFIG;
     state &= 0x1; // max 1 bits
     uint32_t status = serial.read(adr);
     status &= 0x1 << 5;
-    status |= delay;
+    status |= 0x1 & (state << 5);
     serial.write(adr, status);
 }
 
 void Comparator::firePulse()
 {
-    uint8_t adr = ADR_PULSECTRL;
+    uint8_t adr = ADR_PULSE_CTRL;
     uint32_t status = serial.read (adr);
     status |= 0x1 << 0;
     serial.write(adr, status);
@@ -151,7 +156,7 @@ void Comparator::firePulse()
 
 bool Comparator::getPulserReady()
 {
-    uint8_t adr = ADR_PULSECTRL;
+    uint8_t adr = ADR_PULSE_CTRL;
     uint32_t status = serial.read (adr);
     bool ready = 0x1 & (status >> 21);
     return ready;
@@ -159,17 +164,17 @@ bool Comparator::getPulserReady()
 
 void Comparator::setCompinInject(bool state)
 {
-    uint8_t adr = ADR_PULSECTRL;
+    uint8_t adr = ADR_PULSE_CTRL;
     uint32_t status = serial.read (adr);
     status &= ~(0x1 << 10);
     status |= state;
     serial.write(adr, status);
 }
 
-struct comparator_currents Comparator::read_comparator_currents()
+struct Comparator::comparator_currents_t Comparator::readComparatorCurrents()
 {
-    struct comparator_currents icomp;
-    struct comparator_currents iscaler;
+    struct comparator_currents_t icomp;
+    struct comparator_currents_t iscaler;
 
     iscaler.ibias = 1.0f;
     iscaler.iamp  = 1.0f;
@@ -178,10 +183,12 @@ struct comparator_currents Comparator::read_comparator_currents()
     iscaler.i3v3  = 1.0f;
     iscaler.i5v0  = 1.0f;
 
-    icomp.ibias = scaler.ibias * adc.readVoltage (0);
-    icomp.ioff  = scaler.ioff  * adc.readVoltage (1);
-    icomp.iamp  = scaler.iamp  * adc.readVoltage (2);
-    icomp.ifamp = scaler.ifamp * adc.readVoltage (3);
-    icomp.i3v3  = scaler.i3v3  * adc.readVoltage (4);
-    icomp.i5v0  = scaler.i5v0  * adc.readVoltage (5);
+    icomp.ibias = iscaler.ibias * adc.readVoltage (0);
+    icomp.ioff  = iscaler.ioff  * adc.readVoltage (1);
+    icomp.iamp  = iscaler.iamp  * adc.readVoltage (2);
+    icomp.ifamp = iscaler.ifamp * adc.readVoltage (3);
+    icomp.i3v3  = iscaler.i3v3  * adc.readVoltage (4);
+    icomp.i5v0  = iscaler.i5v0  * adc.readVoltage (5);
+
+    return icomp;
 }

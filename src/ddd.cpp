@@ -1,30 +1,4 @@
-#include "registers.h"
-#include "dac.hpp"
-
-void DDD::write (int dac_counts)
-{
-    uint32_t status = serial.read(adr[m_dac]);
-    status &= ~clk[m_dac]; // CLK Low
-    status &= ~din[m_dac]; // Data Low
-    status |=  en[m_dac];  // CS High
-    serial.write(adr[m_dac], status);
-
-    for (int iclk=0; iclk<14; iclk++)
-    {
-        status &= ~clk[m_dac];
-        serial.write(adr[m_dac], status);                             // Clock LOW
-
-        status &= ~en[m_dac];                                         // CS Low
-        status &= ~(din[m_dac]);                                      // Reset Data
-
-        status |=  (dac_counts >> (14-iclk)) ? (din[m_dac]) : 0;      // Data
-
-        serial.write(adr[m_dac], status);                             // Write Data
-
-        status |= clk[m_dac];
-        serial.write(adr[m_dac], status);                             // Clock HIGH
-    }
-}
+#include "ddd.hpp"
 
 void DDD::setDelay (ddd_config config)
 {
@@ -40,6 +14,7 @@ void DDD::setDelay (ddd_config config)
     data |= 0xF & config.ch3delay  << 12;
     data |= 0xF & config.ch4delay  << 16;
 
+    uint32_t status = serial.read (adr);
     status &= ~sclk;    // CLK Low
     status &= ~mosi;    // Data Low
     status |=  latch;   // CS High

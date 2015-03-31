@@ -1,4 +1,3 @@
-#include "registers.h"
 #include "dac.hpp"
 
 void DAC::write (int dac_counts)
@@ -27,7 +26,7 @@ void DAC::write (int dac_counts)
 
 void DAC::writeVoltage (float voltage)
 {
-    int dac_counts = static_cast<int>(2<<14*(voltage / VREF)-1);
+    int dac_counts = static_cast<int>((2<<14) * (voltage/VREF) - 1);
     write(dac_counts);
 }
 
@@ -41,9 +40,9 @@ void DAC::setPulseDAC ()
     m_dac = PULSE_DAC;
 }
 
-const uint32_t DAC::adr = {ADR_PULSE_CTRL, ADR_COMP_CONFIG};
-const uint32_t DAC::en  = {0x1 << 5,       0x1 << 6};
-const uint32_t DAC::din = {0x1 << 6,       0x1 << 7};
-const uint32_t DAC::en  = {0x1 << 7,       0x1 << 8};
+const uint32_t DAC::adr [] = {ADR_PULSE_CTRL, ADR_COMP_CONFIG};
+const uint32_t DAC::en  [] = {0x1 << 5,       0x1 << 6};
+const uint32_t DAC::din [] = {0x1 << 6,       0x1 << 7};
+const uint32_t DAC::clk [] = {0x1 << 7,       0x1 << 8};
 
 const float DAC::VREF = 3.3f;

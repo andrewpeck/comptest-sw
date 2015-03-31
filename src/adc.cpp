@@ -13,7 +13,8 @@ int ADC::read (int channel)
 
 float ADC::readVoltage(int channel)
 {
-    float voltage = VREF * (float)read(channel) / ((float) 2<<14-1);
+    float voltage = VREF * (float)read(channel) / ((2<<14)-1);
+    return voltage;
 }
 
 int ADC::spiWriteRead (uint16_t write_data)
@@ -30,7 +31,7 @@ int ADC::spiWriteRead (uint16_t write_data)
     int num_bits = 16;
     for (int iclk=0; iclk<num_bits; iclk++)
     {
-        status &= ~clk;                                         // Clock LOW
+        status &= ~sclk;                                         // Clock LOW
         serial.write(adr, status);
 
         status &= ~cs;                                          // CS Low
@@ -39,13 +40,13 @@ int ADC::spiWriteRead (uint16_t write_data)
         serial.write(adr, status);
         read_data |= !!(serial.read(adr) & miso) << iclk;
 
-        status |= clk;
+        status |= sclk;
         serial.write(adr, status);                              // Clock HIGH
     }
 
     read_data = read_data >> 2;
     read_data &= (0x1<<14)-1;
-    return data;
+    return read_data;
 }
 
 void ADC::initialize()
@@ -62,11 +63,12 @@ void ADC::selectChannel(int channel)
 int ADC::readFIFO()
 {
     int data = spiWriteRead(READFIFO);
+    return data;
 }
 
-int ADC::configure()
+void ADC::configure()
 {
-    struct adc_config config;
+    struct ADCconfig_t config;
     config.sp = SP_SHORT;
     config.rs = RS_EXTERNAL;
     config.cc = CC_INTERNAL;
@@ -80,7 +82,7 @@ int ADC::configure()
     spiWriteRead(codeConfig(config));
 }
 
-uint32_t ADC::codeConfig(adc_config config)
+uint32_t ADC::codeConfig(struct ADCconfig_t config)
 {
     uint16_t cfr = 0;
     if (config.rs == RS_EXTERNAL)

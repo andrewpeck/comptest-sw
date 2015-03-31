@@ -1,14 +1,43 @@
+#ifndef ADC_HPP
+#define ADC_HPP
+
+#include <stdint.h>
+#include "serial.hpp"
+
 class ADC {
     public:
         int read (int channel);
         float readVoltage (int channel);
     private:
+        enum OutputFormat    { OF_BOB, OF_USB, OF_BTC };
+        enum SamplePeriod    { SP_LONG, SP_SHORT };
+        enum ReferenceSelect { RS_INTERNAL, RS_EXTERNAL };
+        enum ConversionClock { CC_INTERNAL, CC_SCLK };
+        enum InputMode       { IM_SINGLE_ENDED, IM_PSEUDO_DIFFERENTIAL };
+        enum ConversionMode  { CM_ONE_SHOT, CM_REPEAT, CM_SWEEP, CM_REPEAT_SWEEP };
+        enum SweepSequence   { SS_01234567, SS_02460246, SS_00224466, SS_02020202 };
+        enum PinFunction     { PF_INT_BAR, PF_EOC };
+        enum TriggerLevel    { TL_FULL, TL_75PC, TL_50PC, TL_25PC };
+
+        struct ADCconfig_t {
+            SamplePeriod sp;
+            ReferenceSelect rs;
+            ConversionClock cc;
+            ConversionMode cm;
+            SweepSequence ss;
+            InputMode im;
+            OutputFormat of;
+            PinFunction pf;
+            TriggerLevel tl;
+        };
+
+        int spiWriteRead (uint16_t write_data);
 
         void initialize();
         void selectChannel(int channel);
         int readFIFO();
-        int configure();
-        uint32_t codeConfig(adc_config config);
+        void configure();
+        uint32_t codeConfig(struct ADCconfig_t config);
 
         static const float VREF;
 
@@ -24,27 +53,9 @@ class ADC {
         static const int REFHIGH        = 0xD << 12;
         static const int POWERDOWN      = 0x8 << 12;
         static const int INITIALIZE     = 0xA << 12;
-        static const int CONFIG_DEFAULT = 0xF << 12;
 
-        enum OutputFormat    { OF_BOB, OF_USB, OF_BTC };
-        enum SamplePeriod    { SP_LONG, SP_SHORT };
-        enum ReferenceSelect { RS_INTERNAL, RS_EXTERNAL };
-        enum ConversionClock { CC_INTERNAL, CC_SCLK };
-        enum InputMode       { IM_SINGLE_ENDED, IM_PSEUDO_DIFFERENTIAL };
-        enum ConversionMode  { CM_ONE_SHOT, CM_REPEAT, CM_SWEEP, CM_REPEAT_SWEEP };
-        enum SweepSequence   { SS_01234567, SS_02460246, SS_00224466, SS_02020202 };
-        enum PinFunction     { PF_INT_BAR, PF_EOC };
-        enum TriggerLevel    { TL_FULL, TL_75PC, TL_50PC, TL_25PC };
 
-        struct adc_config {
-            SamplePeriod sp;
-            ReferenceSelect rs;
-            ConversionClock cc;
-            ConversionMode cm;
-            SweepSequence ss;
-            InputMode im;
-            OutputFormat of;
-            PinFunction pf;
-            TriggerLevel tl;
-        };
+        Serial serial;
 };
+
+#endif

@@ -1,3 +1,10 @@
+#ifndef DAC_HPP
+#define DAC_HPP
+
+#include "serial.hpp"
+#include "registers.hpp"
+#include "dac.hpp"
+
 class DAC {
     public:
         void write (int dac_counts);
@@ -15,4 +22,8 @@ class DAC {
         static const uint32_t din[2];
         static const uint32_t clk[2];
         static const uint32_t adr[2];
+
+        Serial serial;
 };
+
+#endif

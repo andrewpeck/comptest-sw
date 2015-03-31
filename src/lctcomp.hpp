@@ -1,43 +1,37 @@
-class lct_comparator {
+#ifndef LCTCOMP_HPP
+#define LCTCOMP_HPP
+#include <stdint.h>
+#include "serial.hpp"
+#include "registers.hpp"
+#include "adc.hpp"
+class Comparator {
     public:
-        // Read pattern from comparators
-        int pattern_read (struct lct_pattern pattern);
 
-        // Check pattern, expect vs. read
-        // return number of errors
-        int pattern_check (struct lct_pattern expect, struct lct_pattern read);
-
-        int readHalfstripsErrcnt();
-        int readCompoutErrcnt();
-        int resetHalfstripsErrcnt();
-        int resetCompoutErrcnt();
-
-        void setPeakMode (pkmode peakmode);
-        void setPeakTime (pktime peaktime);
-        void setPulseWidth (int width);
-        void setBxDelay (int delay);
-
-        void setPatternExpect (struct lct_pattern expect);
-
-        struct supply_voltages readSupplyVoltages();
-        struct supply_currents readSupplyCurrents();
-        struct comparator_voltages read_comparator_voltages();
-        struct comparator_currents read_comparator_currents();
-
-        struct lctpattern_t {
+        struct LCTpattern_t {
             uint32_t halfstrips;
             bool compout;
         };
 
-        enum pkmode_t
-        {
+        // Check pattern, expect vs. read
+        // return number of errors
+        int patternCheck (struct LCTpattern_t expect, struct LCTpattern_t read);
+        void printPattern (struct LCTpattern_t pattern);
+        struct LCTpattern_t patternRead ();
 
-        };
+        int readHalfstripsErrcnt();
+        int readCompoutErrcnt();
+        void resetHalfstripsErrcnt();
+        void resetCompoutErrcnt();
 
-        enum pktime_t {
+        enum pkmode_t { PKMODE0, PKMODE1, PKMODE2 };
+        enum pktime_t { T25NS, T50NS, T75NS, T100NS, T125NS, T150NS, T175NS, T200NS };
 
-        };
+        void setPeakMode (pkmode_t peakmode);
+        void setPeakTime (pktime_t peaktime);
+        void setPulseWidth (int width);
+        void setBxDelay (int delay);
 
+        void setPatternExpect (struct LCTpattern_t expect);
 
         struct comparator_currents_t {
             float ibias;
@@ -48,5 +42,19 @@ class lct_comparator {
             float i5v0;
         };
 
+        struct comparator_currents_t readComparatorCurrents();
+
+        void setTriadPersist(int persist, bool persist1);
+        void setLCTReset (bool state);
+        void firePulse();
+        bool getPulserReady();
+        void setCompinInject(bool state);
+
+
+
     private:
-}
+        Serial serial;
+        ADC adc;
+};
+
+#endif
