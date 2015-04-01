@@ -3,19 +3,29 @@
 #include "serial.hpp"
 #include <stdint.h>
 
-/* int mux 0-17
- * int config 0, 1, 2, 3
- */
-
 class Mux {
     public:
-        void halfstripMaptoMux (uint32_t halfstrips);
-        void pulseStripLH (int triad);
-        void pulseStripRH (int triad);
+        enum PulseLevel_t {HIGH, LOW, MED, OFF};
+
+        struct MuxConfig_t {
+            PulseLevel_t in[16];
+            PulseLevel_t next;
+            PulseLevel_t prev;
+        };
+
+        void configStripLH (int strip, struct MuxConfig_t &config);
+        void configStripRH (int strip, struct MuxConfig_t &config);
+        void configAllChannelsOff(struct MuxConfig_t &config);
+
+        uint32_t muxToHalfstripMap (MuxConfig_t config);
+
+        void writeMuxConfig (struct MuxConfig_t config);
+        void writeHalfstripsExpect (uint32_t halfstrips);
+        void writeCompoutExpect (int compout_expect);
+
+        int amp (PulseLevel_t level);
 
     private:
-        int setMuxConfig (int mux, int config);
-
         Serial serial;
 };
 
