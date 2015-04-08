@@ -62,7 +62,7 @@ void Comparator::resetCompoutErrcnt()
     serial.write(adr, status);
 }
 
-void Comparator::setPeakMode (pkmode_t peakmode)
+void Comparator::writePeakMode (PKmode_t peakmode)
 {
     uint8_t adr = ADR_COMP_CONFIG;
     uint32_t pkmode_mask = ~(0x3 << 3);
@@ -72,7 +72,7 @@ void Comparator::setPeakMode (pkmode_t peakmode)
     serial.write(adr, status);
 }
 
-void Comparator::setPeakTime (pktime_t peaktime)
+void Comparator::writePeakTime (PKtime_t peaktime)
 {
     uint8_t adr = ADR_COMP_CONFIG;
     uint32_t pktime_mask = ~(0x7 << 0);
@@ -82,7 +82,7 @@ void Comparator::setPeakTime (pktime_t peaktime)
     serial.write(adr, status);
 }
 
-void Comparator::setPulseWidth (int width)
+void Comparator::writePulseWidth (int width)
 {
     uint8_t adr = ADR_COMP_CONFIG;
     width &= 0xF; // max 4 bits
@@ -93,7 +93,7 @@ void Comparator::setPulseWidth (int width)
     serial.write (adr, status);
 }
 
-void Comparator::setBxDelay (int delay)
+void Comparator::writeBxDelay (int delay)
 {
     uint8_t adr = ADR_COMP_CONFIG;
     delay &= 0x7; // max 3 bits
@@ -104,7 +104,7 @@ void Comparator::setBxDelay (int delay)
     serial.write(adr, status);
 }
 
-void Comparator::setTriadPersist(int persist, bool persist1)
+void Comparator::writeTriadPersist(int persist, bool persist1)
 {
     uint8_t adr = ADR_COMP_CONFIG;
     persist  &= 0x7;  //max 3 bits
@@ -122,7 +122,7 @@ void Comparator::setTriadPersist(int persist, bool persist1)
     serial.write(adr, status);
 }
 
-void Comparator::setPatternExpect (struct Comparator::LCTpattern_t expect)
+void Comparator::writePatternExpect (struct Comparator::LCTpattern_t expect)
 {
     uint8_t adr = ADR_HALFSTRIPS_EXPECT;
     serial.write(adr, expect.halfstrips);
@@ -134,7 +134,7 @@ void Comparator::setPatternExpect (struct Comparator::LCTpattern_t expect)
     serial.write(adr, status);
 }
 
-void Comparator::setLCTReset (bool state)
+void Comparator::writeLCTReset (bool state)
 {
     uint8_t adr = ADR_COMP_CONFIG;
     state &= 0x1; // max 1 bits
@@ -154,7 +154,7 @@ void Comparator::firePulse()
     serial.write(adr, status);
 }
 
-bool Comparator::getPulserReady()
+bool Comparator::isPulserReady()
 {
     uint8_t adr = ADR_PULSE_CTRL;
     uint32_t status = serial.read (adr);
@@ -162,7 +162,7 @@ bool Comparator::getPulserReady()
     return ready;
 }
 
-void Comparator::setCompinInject(bool state)
+void Comparator::writeCompinInject(bool state)
 {
     uint8_t adr = ADR_PULSE_CTRL;
     uint32_t status = serial.read (adr);
@@ -171,10 +171,10 @@ void Comparator::setCompinInject(bool state)
     serial.write(adr, status);
 }
 
-struct Comparator::comparator_currents_t Comparator::readComparatorCurrents()
+struct Comparator::Comparator_currents_t Comparator::readComparatorCurrents()
 {
-    struct comparator_currents_t icomp;
-    struct comparator_currents_t iscaler;
+    struct Comparator_currents_t icomp;
+    struct Comparator_currents_t iscaler;
 
     iscaler.ibias = 1.0f;
     iscaler.iamp  = 1.0f;

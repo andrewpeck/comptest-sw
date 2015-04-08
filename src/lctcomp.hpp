@@ -23,17 +23,17 @@ class Comparator {
         void resetHalfstripsErrcnt();
         void resetCompoutErrcnt();
 
-        enum pkmode_t { PKMODE0, PKMODE1, PKMODE2 };
-        enum pktime_t { T25NS, T50NS, T75NS, T100NS, T125NS, T150NS, T175NS, T200NS };
+        enum PKmode_t { PKMODE0, PKMODE1, PKMODE2 };
+        enum PKtime_t { PKTIME25, PKTIME50, PKTIME75, PKTIME100, PKTIME125, PKTIME150, PKTIME175, PKTIME200 };
 
-        void setPeakMode (pkmode_t peakmode);
-        void setPeakTime (pktime_t peaktime);
-        void setPulseWidth (int width);
-        void setBxDelay (int delay);
+        void writePeakMode (PKmode_t peakmode);
+        void writePeakTime (PKtime_t peaktime);
+        void writePulseWidth (int width);
+        void writeBxDelay (int delay);
 
-        void setPatternExpect (struct LCTpattern_t expect);
+        void writePatternExpect (struct LCTpattern_t expect);
 
-        struct comparator_currents_t {
+        struct Comparator_currents_t {
             float ibias;
             float iamp;
             float ifamp;
@@ -42,15 +42,13 @@ class Comparator {
             float i5v0;
         };
 
-        struct comparator_currents_t readComparatorCurrents();
+        struct Comparator_currents_t readComparatorCurrents();
 
-        void setTriadPersist(int persist, bool persist1);
-        void setLCTReset (bool state);
+        void writeTriadPersist(int persist, bool persist1);
+        void writeLCTReset (bool state);
         void firePulse();
-        bool getPulserReady();
-        void setCompinInject(bool state);
-
-
+        bool isPulserReady();
+        void writeCompinInject(bool state);
 
     private:
         Serial serial;
