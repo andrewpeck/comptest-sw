@@ -1,7 +1,9 @@
 #include "dac.hpp"
+#include <cstdio>
 
 void DAC::write (int dac_counts)
 {
+    // Set Inactive
     uint32_t status = serial.read(adr[m_dac]);
     status &= ~clk[m_dac]; // CLK Low
     status &= ~din[m_dac]; // Data Low
@@ -11,17 +13,26 @@ void DAC::write (int dac_counts)
     for (int iclk=0; iclk<14; iclk++)
     {
         status &= ~clk[m_dac];
-        serial.write(adr[m_dac], status);                             // Clock LOW
+        serial.write(adr[m_dac], status);  // Clock LOW
 
-        status &= ~en[m_dac];                                         // CS Low
-        status &= ~(din[m_dac]);                                      // Reset Data
-        status |=  (dac_counts >> (14-iclk)) ? (din[m_dac]) : 0; // Data
+        int data_bit = (0x1 & (dac_counts >> (13-iclk))) ? (din[m_dac]) : 0;
+        status &= ~en[m_dac];              // Cs LOW
+        status &= ~(din[m_dac]);           // Reset Data
+        status |= data_bit;                // Write Data
+        serial.write(adr[m_dac], status);
 
-        serial.write(adr[m_dac], status);                             // Write Data
-
-        status |= clk[m_dac];
-        serial.write(adr[m_dac], status);                             // Clock HIGH
+        status |= clk[m_dac];              // Clock HIGH
+        serial.write(adr[m_dac], status);
     }
+
+    // Return Inactive
+    status = serial.read(adr[m_dac]);
+    status &= ~clk[m_dac]; // CLK Low
+    status &= ~din[m_dac]; // Data Low
+    status |=  en[m_dac];  // CS High
+    serial.write(adr[m_dac], status);
+
+}
 }
 
 void DAC::writeVoltage (float voltage)
