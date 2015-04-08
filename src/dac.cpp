@@ -33,11 +33,16 @@ void DAC::write (int dac_counts)
     serial.write(adr[m_dac], status);
 
 }
+
+float DAC::voltage(int dac_counts)
+{
+    float DAC_REFERENCE = 3.3f;
+    return (dac_counts / float((1<<14)-1) * DAC_REFERENCE);
 }
 
 void DAC::writeVoltage (float voltage)
 {
-    int dac_counts = static_cast<int>((2<<14) * (voltage/VREF) - 1);
+    int dac_counts = static_cast<int>((1<<14) * (voltage/VREF) - 1);
     write(dac_counts);
 }
 
@@ -49,6 +54,12 @@ void DAC::setCompDAC ()
 void DAC::setPulseDAC ()
 {
     m_dac = PULSE_DAC;
+}
+CDAC::CDAC () {
+    setCompDAC();
+}
+PDAC::PDAC () {
+    setPulseDAC();
 }
 
 const uint32_t DAC::adr [] = {ADR_PULSE_CTRL, ADR_COMP_CONFIG};

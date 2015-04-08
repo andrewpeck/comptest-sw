@@ -4,19 +4,25 @@
 #include "serial.hpp"
 #include "registers.hpp"
 #include "dac.hpp"
+#include <cstdio>
 
 class DAC {
     public:
         void write (int dac_counts);
         void writeVoltage (float voltage);
-        void setCompDAC();
-        void setPulseDAC();
-    private:
+
+        float voltage (int dac_counts);
+
         int m_dac;
+
+    protected:
         static const float VREF;
 
+        void setPulseDAC();
+        void setCompDAC();
         static const int PULSE_DAC = 0;
         static const int COMP_DAC  = 1;
+
 
         static const uint32_t en [2];
         static const uint32_t din[2];
@@ -25,5 +31,16 @@ class DAC {
 
         Serial serial;
 };
+
+class PDAC : public DAC {
+    public:
+    PDAC ();
+};
+
+class CDAC : public DAC {
+    public:
+    CDAC ();
+};
+
 
 #endif
