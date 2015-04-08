@@ -6,6 +6,7 @@
 
 class ADC {
     public:
+        ADC();
         int read (int channel);
         float readVoltage (int channel);
     private:
@@ -38,8 +39,6 @@ class ADC {
         int readFIFO();
         void configure();
         uint32_t codeConfig(struct ADCconfig_t config);
-
-        static const float VREF;
 
         static const uint32_t cs        = 0x1 << 0;
         static const uint32_t mosi      = 0x1 << 1;

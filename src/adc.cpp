@@ -2,10 +2,14 @@
 #include "adc.hpp"
 #include <stdint.h>
 
-int ADC::read (int channel)
+ADC::ADC ()
 {
     initialize();
     configure();
+}
+
+int ADC::read (int channel)
+{
     selectChannel(channel);
     int data = readFIFO();
     return data;
@@ -13,7 +17,8 @@ int ADC::read (int channel)
 
 float ADC::readVoltage(int channel)
 {
-    float voltage = VREF * (float)read(channel) / ((2<<14)-1);
+    float VREF = 5.0f;
+    float voltage = VREF * (float)read(channel) / (0xFFF);
     return voltage;
 }
 
@@ -22,30 +27,39 @@ int ADC::spiWriteRead (uint16_t write_data)
     uint32_t adr = ADR_ADC;
     uint32_t status = serial.read(adr);
 
+    /* Inactive */
     status &= ~sclk; // CLK Low
     status &= ~mosi; // Data Low
-    status |=  cs;   // CS High
+    status &= ~cs;   // CS Low
     serial.write(adr, status);
     uint32_t read_data = 0;
 
     int num_bits = 16;
-    for (int iclk=0; iclk<num_bits; iclk++)
-    {
-        status &= ~sclk;                                         // Clock LOW
-        serial.write(adr, status);
+    for (int iclk=0; iclk<num_bits; iclk++) {
 
-        status &= ~cs;                                          // CS Low
-        status &= ~mosi;                                        // Reset Data
-        status |=  (write_data >> (num_bits-iclk)) ? (mosi) : 0;      // Data
+        int data_bit =  (0x1 & (write_data >> (15-iclk))) ? (mosi) : 0;
+
+        status &= ~sclk;     // CLK Low
+        status &= ~mosi;     // Reset Data
+        status |=  data_bit; // Write Data Bit
         serial.write(adr, status);
-        read_data |= !!(serial.read(adr) & miso) << iclk;
 
         status |= sclk;
-        serial.write(adr, status);                              // Clock HIGH
+        serial.write(adr, status); // Clock HIGH
+
+        data_bit = !!(serial.read(adr) & miso) << (15-iclk);
+
+        read_data |= data_bit;
     }
 
-    read_data = read_data >> 2;
-    read_data &= (0x1<<14)-1;
+    /* Inactive */
+    status &= ~sclk; // CLK Low
+    status &= ~mosi; // Data Low
+    status |=  cs;   // CS High
+    serial.write(adr, status);
+
+    read_data  = read_data >> 2;
+    read_data &= 0x3FFF;
     return read_data;
 }
 
@@ -144,4 +158,3 @@ uint32_t ADC::codeConfig(struct ADCconfig_t config)
     return ((INITIALIZE&0xF)<<12) | (cfr&0xFFF);
 }
 
-const float ADC::VREF = 5.0f;
