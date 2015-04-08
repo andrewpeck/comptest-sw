@@ -19,7 +19,7 @@ int Mux::amp (PulseLevel_t level)
         return 0;
 }
 
-uint32_t Mux::muxToHalfstripMap (MuxConfig_t config)
+uint32_t Mux::configToHalfstripMap (MuxConfig_t config)
 {
     const uint8_t LEFT  = 0x1;
     const uint8_t RIGHT = 0x2;
@@ -85,6 +85,12 @@ uint32_t Mux::muxToHalfstripMap (MuxConfig_t config)
     return halfstrips;
 }
 
+uint32_t Mux::configToCompoutExpect (MuxConfig_t config)
+{
+    //TODO: fill in this code
+    return (1);
+}
+
 void Mux::writeHalfstripsExpect (uint32_t halfstrips)
 {
     uint8_t adr = ADR_MUX1;
@@ -140,7 +146,7 @@ void Mux::configAllChannelsOff(struct MuxConfig_t &config)
         config.in[i] = OFF;
 }
 
-void Mux::writeMuxConfig (struct MuxConfig_t config)
+void Mux::writeConfig (struct MuxConfig_t config)
 {
     uint8_t adr = ADR_MUX1;
     uint32_t status = 0;
