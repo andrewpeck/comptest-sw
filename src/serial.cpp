@@ -8,6 +8,9 @@
 
 void Serial::write (uint8_t adr, uint32_t write_data)
 {
+#ifdef emulate
+    emu.write(adr, write_data);
+#else
     uint8_t cmd [1] = {static_cast<uint8_t>(0xFF & (WRITE_CMD | (0xF0 & adr << 4)))};
     ft_write (cmd, 1);
 
@@ -19,10 +22,14 @@ void Serial::write (uint8_t adr, uint32_t write_data)
     wr_packet[3] = 0xFF & (write_data >> 0);
 
     ft_write (wr_packet, 4);
+#endif
 }
 
 uint32_t Serial::read  (uint8_t adr)
 {
+#ifdef emulate
+    uint32_t read_data = emu.read(adr);
+#else
     uint8_t cmd [1] = {static_cast<uint8_t>(0xFF & (READ_CMD | (0xF0 & adr << 4)))};
     ft_write (cmd, 1);
 
@@ -36,12 +43,15 @@ uint32_t Serial::read  (uint8_t adr)
     read_data |= rd_packet[2] << 16;
     read_data |= rd_packet[3] << 24;
     //TODO : check the endianness of this
+#endif
 
     return read_data;
 }
 
 Serial::Serial()
 {
+#ifdef emulate
+#else
     // Init
     if ((ftdi = ftdi_new()) == 0)
     {
@@ -60,14 +70,20 @@ Serial::Serial()
                 ftdi_get_error_string(ftdi));
         exit(-1);
     }
+#endif
 }
 
 Serial::~Serial()
 {
+#ifdef emulate
+#else
     ftdi_usb_close(ftdi);
     ftdi_free(ftdi);
+#endif
 }
 
+#ifdef emulate
+#else
 int Serial::ft_write (uint8_t *write_data, int num_bytes)
 {
     f = ftdi_write_data(ftdi, write_data, num_bytes);
@@ -78,7 +94,10 @@ int Serial::ft_write (uint8_t *write_data, int num_bytes)
 
     return f;
 }
+#endif
 
+#ifdef emulate
+#else
 int Serial::ft_read(uint8_t* read_data)
 {
     while (true) {
@@ -89,3 +108,4 @@ int Serial::ft_read(uint8_t* read_data)
         }
     }
 }
+#endif
