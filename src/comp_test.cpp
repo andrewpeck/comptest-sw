@@ -2,99 +2,136 @@
 #include <stdexcept>
 #include <iostream>
 #include <fstream>
+#include <limits>
 
 #include "lctcomp.hpp"
 #include "dac.hpp"
 #include "mux.hpp"
 #include "ddd.hpp"
+#include "comp_test.hpp"
 
-static const int LEFT = 0x0;
-static const int RIGHT = 0x1;
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+#define ANSI_COLOR_YELLOW  "\x1b[33m"
+#define ANSI_COLOR_BLUE    "\x1b[34m"
+#define ANSI_COLOR_MAGENTA "\x1b[35m"
+#define ANSI_COLOR_CYAN    "\x1b[36m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
+#define ANSI_BOLD          "\033[1m"
+#define ANSI_RESET         "\033[0m"
 
-// test parameters
-static const float pass_threshold = 0.5;
-static const int num_pulses = 1000;
+/* TODO: Definition of OFFSET is wrong
+ *       need to calculate the difference between left and right amplitudes
+ *
+ * TODO: figure out what the hell to do with COMPIN
+ *
+ * TODO: convert bias currents to microamps scale
+ *
+ * TODO: colored output
+ */
 
-static const int CDAC_VALUE = 120;
-Comparator comp;
-CDAC cdac;
-PDAC pdac;
-DDD ddd;
-Mux mux;
+/* Test Parameters */
+static const float PASS_THRESHOLD   = 0.5;
+static const int   NUM_PULSES       = 1000;
+static const int   CDAC_VALUE       = 120;
+static const int   PDAC_MIN         = 0;
+static const int   PDAC_MAX         = 200;
+static const int   SCAN_GRANULARITY = 2;
+static const int   DDD_DELAY        = 0;
+static const int   TRIAD_PERSIST    = 0;
+static const int   TRIAD_PERSIST1   = 1;
+static const int   COMPIN_INJECT    = 0;
 
-struct TestResult_t
-{
-    float  thresh_l [16];
-    float  thresh_r [16];
-    float  offset_l [15];
-    float  offset_r [15];
-    struct Comparator::Comparator_currents_t currents;
-};
+static const Comparator::PKmode_t   PKMODE = Comparator::PKMODE0;
+static const Comparator::PKtime_t   PKTIME = Comparator::PKTIME150;
 
+static const float PULSEAMP_SCALE_FACTOR = 0.04f;
 
-float scanThreshold(int strip, int side);
-void writeLogFile (std::string filename, struct TestResult_t result);
-void printAsciiLogFile (std::string filename);
-void writeAsciiLogFile (std::string filename, struct TestResult_t result);
-int countErrors (struct TestResult_t checkedResult);
-struct TestResult_t checkResult (struct TestResult_t result);
-std::string isPassed (bool pass);
-std::string now();
-struct TestResult_t scanChip ();
-void initializeLCT();
-void initializeDDD();
+static const float REF_THRESH_LOW  = +9.0;
+static const float REF_THRESH_HIGH = +16.0;
 
+static const float REF_OFFSET_LOW  = -5;
+static const float REF_OFFSET_HIGH = +5;
+
+/* Ref==20uA */
+static const float REF_IBIAS_LOW = 0.f;
+static const float REF_IBIAS_HIGH = 32.0f;
+
+/* Ref=10uA */
+static const float REF_IAMP_LOW  = 0.f;
+static const float REF_IAMP_HIGH  = 32.0f;
+
+/* Ref==2uA */
+static const float REF_IOFF_LOW  = 0.f;
+static const float REF_IOFF_HIGH  = 32.0f;
+
+/* Ref 10uA */
+static const float REF_IFAMP_LOW = 0.f;
+static const float REF_IFAMP_HIGH = 32.0f;
+
+/* Ref== */
+static const float REF_I3V3_LOW  = 0.f;
+static const float REF_I3V3_HIGH  = 8.0f;
+
+/* Ref */
+static const float REF_I5V0_LOW  = 0.f;
+static const float REF_I5V0_HIGH  = 8.0f;
+
+static const float REF_THRESH_DELTA_LOW =0.f;
+static const float REF_THRESH_DELTA_HIGH=7.f;
+
+static Comparator comp;
+static CDAC       cdac;
+static PDAC       pdac;
+static DDD        ddd;
+static Mux        mux;
 
 int main (int argc, char** argv)
 {
-    initializeDDD();
+    ddd.setDelay(DDD_DELAY);
+    initializeLCT();
     struct TestResult_t result = scanChip();
 
     std::string filename = now();         // returns current date+time as string
     writeLogFile (filename, result);      // Saves binary record of the raw test result
     writeAsciiLogFile (filename, result); // Writes ASCII Log File
-    printAsciiLogFile (filename);         // Prints the log file to the screen... not very efficient.. but OK..
+    writeAsciiLogFile ("stdout", result); // Writes ASCII Log File
 }
 
-void initializeDDD()
-{
-    struct DDD::ddd_config dddconf;
-    dddconf.ch1enable = true;
-    dddconf.ch2enable = true;
-    dddconf.ch3enable = true;
-    dddconf.ch4enable = true;
-    dddconf.ch1delay  = 1;
-    dddconf.ch2delay  = 1;
-    dddconf.ch3delay  = 1;
-    dddconf.ch4delay  = 1;
-
-    ddd.setDelay (dddconf);
-}
-
-void initializeLCT()
+static void initializeLCT()
 {
     cdac.write(CDAC_VALUE);
 
-    comp.writePeakMode(Comparator::PKMODE0);   // what should this be?
-    comp.writePeakTime(Comparator::PKTIME150); // what should this be?
-    comp.writeTriadPersist(0,1);   // what should this be?
+    comp.writePeakMode(PKMODE);    // what should this be?
+    comp.writePeakTime(PKTIME);    // what should this be?
+    comp.writeTriadPersist(TRIAD_PERSIST,TRIAD_PERSIST1);   // what should this be?
     comp.writeCompinInject(0);     // what should this be?
 }
 
-struct TestResult_t scanChip ()
+static struct TestResult_t scanChip ()
 {
-    initializeLCT();
-
     struct TestResult_t result;
     result.currents = comp.readComparatorCurrents();
 
+    float thresh_max = std::numeric_limits<float>::min();
+    float thresh_min = std::numeric_limits<float>::max();
+    float thresh;
+
     for (int strip=0; strip<16; strip++) {
-        result.thresh_l[strip] = scanThreshold(strip, LEFT);
+        thresh = scanThreshold(strip, LEFT);
+        thresh_min = (thresh < thresh_min) ? thresh : thresh_min;
+        thresh_max = (thresh > thresh_max) ? thresh : thresh_max;
+        result.thresh_l[strip] = thresh;
     }
 
     for (int strip=0; strip<16; strip++) {
-        result.thresh_r[strip] = scanThreshold(strip, RIGHT);
+        thresh = scanThreshold(strip, RIGHT);
+        result.thresh_r[strip] = thresh;
+        thresh_min = (thresh < thresh_min) ? thresh : thresh_min;
+        thresh_max = (thresh > thresh_max) ? thresh : thresh_max;
     }
+
+    result.thresh_delta = thresh_max - thresh_min;
 
     for (int strip=0; strip<15; strip++) {
         result.offset_l [strip] = result.thresh_l[strip+1]-result.thresh_l[strip];
@@ -109,7 +146,7 @@ struct TestResult_t scanChip ()
     return result;
 }
 
-std::string now()
+static std::string now()
 {
     /* Logging */
     char datestr [80];
@@ -120,15 +157,15 @@ std::string now()
     return filename;
 }
 
-std::string isPassed (bool pass)
+static std::string isPassed (bool pass)
 {
     if (pass)
-        return "PASS";
+        return "\x1b[32mPASS\x1b[0m";
     else
-        return "FAIL";
+        return "\033[1m\x1b[31mFAIL\x1b[0m";
 }
 
-void writeLogFile (std::string filename, struct TestResult_t result)
+static void writeLogFile (std::string filename, struct TestResult_t result)
 {
     filename += ".dat";
     filename = "log/raw/" + filename;
@@ -137,65 +174,35 @@ void writeLogFile (std::string filename, struct TestResult_t result)
     fclose (log);
 }
 
-struct TestResult_t checkResult (struct TestResult_t result)
+static struct TestResult_t checkResult (struct TestResult_t result)
 {
-    struct TestResult_t refLow;
-    for (int i=0; i<16; i++) {
-        refLow.thresh_l [i]          = 0.015;
-        refLow.thresh_r [i]          = 0.015;
-    }
-    for (int i=0; i<15; i++) {
-        refLow.offset_l [i]          = -0.001;
-        refLow.offset_r [i]          = -0.001;
-    }
-
-    refLow.currents.ibias = 0;
-    refLow.currents.iamp  = 0;
-    refLow.currents.ifamp = 0;
-    refLow.currents.ioff  = 0;
-    refLow.currents.i3v3  = 0;
-    refLow.currents.i5v0  = 0;
-
-    struct TestResult_t refHigh;
-    for (int i=0; i<16; i++) {
-        refHigh.thresh_l [i]          = 0.025;
-        refHigh.thresh_r [i]          = 0.025;
-    }
-    for (int i=0; i<15; i++) {
-        refHigh.offset_l [i]          = +0.001;
-        refHigh.offset_r [i]          = +0.001;
-    }
-
-    refHigh.currents.ibias = 1;
-    refHigh.currents.iamp  = 1;
-    refHigh.currents.ifamp = 1;
-    refHigh.currents.ioff  = 1;
-    refHigh.currents.i3v3  = 1;
-    refHigh.currents.i5v0  = 1;
 
     struct TestResult_t passed;
 
     for (int i=0; i<15; i++) {
-        passed.thresh_l [i] = (refLow.thresh_l [i] < result.thresh_l [i]) && (result.thresh_l [i] < refHigh.thresh_l[i]) ? 1 : 0;
-        passed.thresh_r [i] = (refLow.thresh_r [i] < result.thresh_r [i]) && (result.thresh_r [i] < refHigh.thresh_r[i]) ? 1 : 0;
+        passed.thresh_l [i] = (REF_THRESH_LOW < result.thresh_l [i]) && (result.thresh_l [i] < REF_THRESH_HIGH) ? 1 : 0;
+        passed.thresh_r [i] = (REF_THRESH_LOW < result.thresh_r [i]) && (result.thresh_r [i] < REF_THRESH_HIGH) ? 1 : 0;
     }
     for (int i=0; i<14; i++) {
-        passed.offset_l [i] = (refLow.offset_l [i] < result.offset_l [i]) && (result.offset_l [i] < refHigh.offset_l[i]) ? 1 : 0;
-        passed.offset_r [i] = (refLow.offset_r [i] < result.offset_r [i]) && (result.offset_r [i] < refHigh.offset_r[i]) ? 1 : 0;
+        passed.offset_l [i] = (REF_OFFSET_LOW < result.offset_l [i]) && (result.offset_l [i] < REF_OFFSET_HIGH) ? 1 : 0;
+        passed.offset_r [i] = (REF_OFFSET_LOW < result.offset_r [i]) && (result.offset_r [i] < REF_OFFSET_HIGH) ? 1 : 0;
     }
 
-    passed.currents.ibias   = (refLow.currents.ibias < result.currents.ibias ) &&  (result.currents.ibias < refHigh.currents.ibias) ? 1 : 0;
-    passed.currents.iamp    = (refLow.currents.iamp  < result.currents.iamp  ) &&  (result.currents.iamp  < refHigh.currents.iamp ) ? 1 : 0;
-    passed.currents.ifamp   = (refLow.currents.ifamp < result.currents.ifamp ) &&  (result.currents.ifamp < refHigh.currents.ifamp) ? 1 : 0;
-    passed.currents.ioff    = (refLow.currents.ioff  < result.currents.ioff  ) &&  (result.currents.ioff  < refHigh.currents.ioff ) ? 1 : 0;
-    passed.currents.i3v3    = (refLow.currents.i3v3  < result.currents.i3v3  ) &&  (result.currents.i3v3  < refHigh.currents.i3v3 ) ? 1 : 0;
-    passed.currents.i5v0    = (refLow.currents.i5v0  < result.currents.i5v0  ) &&  (result.currents.i5v0  < refHigh.currents.i5v0 ) ? 1 : 0;
+    passed.thresh_delta = (REF_THRESH_DELTA_LOW  < result.thresh_delta  ) &&  (result.thresh_delta  < REF_THRESH_DELTA_HIGH)  ? 1 : 0;
+
+    passed.currents.ibias   = (REF_IBIAS_LOW < result.currents.ibias ) &&  (result.currents.ibias < REF_IBIAS_HIGH) ? 1 : 0;
+    passed.currents.iamp    = (REF_IAMP_LOW  < result.currents.iamp  ) &&  (result.currents.iamp  < REF_IAMP_HIGH)  ? 1 : 0;
+    passed.currents.ifamp   = (REF_IFAMP_LOW < result.currents.ifamp ) &&  (result.currents.ifamp < REF_IFAMP_HIGH) ? 1 : 0;
+    passed.currents.ioff    = (REF_IOFF_LOW  < result.currents.ioff  ) &&  (result.currents.ioff  < REF_IOFF_HIGH)  ? 1 : 0;
+    passed.currents.i3v3    = (REF_I3V3_LOW  < result.currents.i3v3  ) &&  (result.currents.i3v3  < REF_I3V3_HIGH)  ? 1 : 0;
+    passed.currents.i5v0    = (REF_I5V0_LOW  < result.currents.i5v0  ) &&  (result.currents.i5v0  < REF_I5V0_HIGH)  ? 1 : 0;
+
 
     return (passed);
 }
 
 
-int countErrors (struct TestResult_t checkedResult)
+static int countErrors (struct TestResult_t checkedResult)
 {
     int errors = 0;
     for (int i=0; i<15; i++) {
@@ -210,6 +217,9 @@ int countErrors (struct TestResult_t checkedResult)
         if (!!!checkedResult.offset_r [i])
             errors += 1;
     }
+
+    if (!!!checkedResult.thresh_delta )
+        errors += 1;
 
     if (!!!checkedResult.currents.ibias )
         errors += 1;
@@ -228,71 +238,75 @@ int countErrors (struct TestResult_t checkedResult)
 }
 
 
-void writeAsciiLogFile (std::string filename, struct TestResult_t result)
+static void writeAsciiLogFile (std::string filename, struct TestResult_t result)
 {
+    FILE *log = NULL;
+
+    if (filename=="stdout")
+        log = stdout;
+    else {
     filename += ".log";
     filename = "log/" + filename;
-    FILE *log = fopen(filename.c_str(), "w");
+    log = fopen(filename.c_str(), "w");
+    }
 
     struct TestResult_t checkedResult = checkResult (result);
 
-    fprintf(log,"\nComparator Currents:\n");
-    fprintf(log,"%s ibias: %f\n", isPassed(checkedResult.currents.ibias).c_str(), result.currents.ibias );
-    fprintf(log,"%s iamp:  %f\n", isPassed(checkedResult.currents.iamp).c_str(),  result.currents.iamp  );
-    fprintf(log,"%s ifamp: %f\n", isPassed(checkedResult.currents.ifamp).c_str(), result.currents.ifamp );
-    fprintf(log,"%s ioff:  %f\n", isPassed(checkedResult.currents.ioff).c_str(),  result.currents.ioff  );
-    fprintf(log,"%s i3v3:  %f\n", isPassed(checkedResult.currents.i3v3).c_str(),  result.currents.i3v3  );
-    fprintf(log,"%s i5v0:  %f\n", isPassed(checkedResult.currents.i5v0).c_str(),  result.currents.i5v0  );
+    fprintf(log, ANSI_BOLD "Comparator Currents:\n" ANSI_RESET );
+    fprintf(log,"\t%s ibias: %5.02f uA\n", isPassed(checkedResult.currents.ibias).c_str(), result.currents.ibias );
+    fprintf(log,"\t%s iamp:  %5.02f uA\n", isPassed(checkedResult.currents.iamp).c_str(),  result.currents.iamp  );
+    fprintf(log,"\t%s ifamp: %5.02f uA\n", isPassed(checkedResult.currents.ifamp).c_str(), result.currents.ifamp );
+    fprintf(log,"\t%s ioff:  %5.02f uA\n", isPassed(checkedResult.currents.ioff).c_str(),  result.currents.ioff  );
+    fprintf(log,"\t%s i3v3:  %5.02f mA\n", isPassed(checkedResult.currents.i3v3).c_str(),  result.currents.i3v3  );
+    fprintf(log,"\t%s i5v0:  %5.02f mA\n", isPassed(checkedResult.currents.i5v0).c_str(),  result.currents.i5v0  );
 
-    fprintf(log,"\nThreshold (L>R):\n");
+    fprintf(log, ANSI_BOLD "\nThresholds:    (left>right)                    (right>left)\n" ANSI_RESET);
     for (int i=0; i<15; i++) {
-        fprintf(log,"%s Channel %02i: % 06.4f\n", isPassed(checkedResult.thresh_l[i]).c_str(), i+1, result.thresh_l[i]);
+        fprintf(log,"\t%s Channel %02i: %05.2f mV", isPassed(checkedResult.thresh_l[i]).c_str(), i+1, result.thresh_l[i]);
+        fprintf(log,"\t%s Channel %02i: %05.2f mV\n", isPassed(checkedResult.thresh_r[i]).c_str(), i+1, result.thresh_r[i]);
     }
 
-    fprintf(log,"\nThreshold (R>L):\n");
-    for (int i=0; i<15; i++) {
-        fprintf(log,"%s Channel %02i: % 06.4f\n", isPassed(checkedResult.thresh_r[i]).c_str(), i+1, result.thresh_r[i]);
-    }
+    fprintf(log, ANSI_BOLD "\nThreshold Delta (thresh max-min) \n" ANSI_RESET);
+    fprintf(log,"\t%s % 06.4f mV\n", isPassed(checkedResult.thresh_delta).c_str(), result.thresh_delta);
 
-    fprintf(log,"\nOffset (L>R):\n");
+    fprintf(log, ANSI_BOLD "\nOffset:        (left>right)                    (right>left)\n" ANSI_RESET);
     for (int i=0; i<14; i++) {
-        fprintf(log,"%s Channel %02i: % 06.4f\n", isPassed(checkedResult.offset_l[i]).c_str(), i+1, result.offset_l[i]);
-    }
-
-    fprintf(log,"\nOffset (R>L):\n");
-    for (int i=0; i<14; i++) {
-        fprintf(log,"%s Channel %02i: % 06.4f\n", isPassed(checkedResult.offset_r[i]).c_str(), i+1, result.offset_r[i]);
+        fprintf(log,"\t%s Channel %02i: % 06.3f mV", isPassed(checkedResult.offset_l[i]).c_str(), i+1, result.offset_l[i]);
+        fprintf(log,"\t%s Channel %02i: % 06.3f mV\n", isPassed(checkedResult.offset_r[i]).c_str(), i+1, result.offset_r[i]);
     }
 
     int num_errors = countErrors(checkedResult);
-    fprintf(log,"\nSummary:\n");
-    fprintf(log,"%s with %i errors\n", isPassed(!num_errors).c_str(), num_errors);
+    fprintf(log, ANSI_BOLD "\nSummary:\n" ANSI_RESET);
+    fprintf(log,"\t%s with %i errors\n\n", isPassed(!num_errors).c_str(), num_errors);
     fclose (log);
 }
 
-void printAsciiLogFile (std::string filename)
+//static void printAsciiLogFile (std::string filename)
+//{
+//    filename += ".log";
+//    filename = "log/" + filename;
+//
+//    std::ifstream fin(filename);
+//    std::string buffer;
+//    while (getline(fin, buffer))
+//        std::cout << buffer << std::endl;
+//    fin.close();
+//}
+
+
+static float scanThreshold(int strip, int side)
 {
-    filename += ".log";
-    filename = "log/" + filename;
-
-    std::ifstream fin(filename);
-    std::string buffer;
-    while (getline(fin, buffer))
-        std::cout << buffer << std::endl;
-    fin.close();
-}
-
-
-float scanThreshold(int strip, int side)
-{
-    comp.writeLCTReset(1);
-
+    /* Sanitizer */
     if (side!=LEFT && side!=RIGHT)
         throw std::runtime_error ("Invalid Halfstrip");
 
     if (strip<0 && strip>15)
         throw std::runtime_error ("Invalid Strip");
 
+
+    comp.writeLCTReset(1);
+
+    /* Configure Muxes and Write Pattern Expect */
     Mux::MuxConfig_t muxconfig;
     mux.configAllChannelsOff(muxconfig);
 
@@ -308,35 +322,30 @@ float scanThreshold(int strip, int side)
     pat.compout = mux.configToCompoutExpect(muxconfig);
     comp.writePatternExpect(pat);
 
-    int dac_min=0;
-    int dac_max=200;
+    /* Should inject the inputs when pulsing strip 0 */
+    /* TODO: I don't understand this... */
+    if (strip==0)
+        comp.writeCompinInject(1);
 
-    for (int dac_value=dac_min; dac_value<dac_max; dac_value+=2) {
-        //printf("Setting pulsedac to %i: ", dac_value);
-        //if ((dac_value%1000)==0)
-        //printf("Pulse setting: %i\n", dac_value);
+    for (int dac_value=PDAC_MIN; dac_value<PDAC_MAX; dac_value+=SCAN_GRANULARITY) {
         pdac.write(dac_value);
 
         comp.writeLCTReset(0);
 
-        usleep(1000);
+        usleep(1);
 
         comp.resetHalfstripsErrcnt();
         comp.resetCompoutErrcnt();
 
-        for (int ipulse=0; ipulse < num_pulses; ipulse++) {
+        for (int ipulse=0; ipulse < NUM_PULSES; ipulse++) {
             while (!comp.isPulserReady());
             comp.firePulse();
         }
         int errors = comp.readHalfstripsErrcnt();
         errors += comp.readCompoutErrcnt();
 
-        //printf("num_errors: %i\n", errors);
-
-        if ((float(errors) / num_pulses) < pass_threshold) {
-            //printf("found dac_value: %i\n", dac_value);
-            //return (dac_value);
-            return (pdac.voltage(dac_value));
+        if ((float(errors) / NUM_PULSES) < PASS_THRESHOLD) {
+            return (1000*pdac.voltage(dac_value)*PULSEAMP_SCALE_FACTOR); // we want millivolts
         }
     }
 
