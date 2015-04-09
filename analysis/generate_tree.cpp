@@ -20,6 +20,7 @@ struct TestResult_t
     float  offset_l [15];
     float  offset_r [15];
     struct Comparator_currents_t currents;
+    float thresh_delta;
 };
 
 
@@ -34,12 +35,13 @@ void generate_tree () {
     float  thresh_r [16];
     float  offset_l [15];
     float  offset_r [15];
+    float *thresh_delta;
 
     //open tfile
     TFile *outfile = new TFile("results.root", "RECREATE");
 
     // tree
-    TTree *tree = new TTree("T","LCT Comparator Test Results");
+    TTree *tree = new TTree("Results","LCT Comparator Test Results");
 
     TestResult_t result;
 
@@ -53,16 +55,15 @@ void generate_tree () {
     tree->Branch("thresh_l", result.thresh_l,  "thresh_l[16]/F");
     tree->Branch("thresh_r", result.thresh_r,  "thresh_r[16]/F");
 
+    tree->Branch("delta_thresh", &result.thresh_delta, "thresh_delta/F");
+
     tree->Branch("offset_l", result.offset_l,  "offset_l[15]/F");
     tree->Branch("offset_r", result.offset_r,  "offset_r[15]/F");
+
 
     //int split = 1;
     //int bufsize = 64000;
     //tree->Branch("chip", &result, bufsize, split);
-
-
-
-
 
     DIR *dir;
     struct dirent *ent;
@@ -74,16 +75,15 @@ void generate_tree () {
                 continue;
             else {
                 filename = "../log/raw/" + filename;
-                printf (") %s\n", ent->d_name);
+                //printf (") %s\n", ent->d_name);
 
                 //open the binary waveform file
                 FILE *f;
-                cout << filename;
+                //cout << filename;
                 if ( (f=fopen(filename.c_str(),"rb")) == NULL)
                     cout << "File not found\n";
 
                 fread(&result, sizeof(result), 1,f);
-                printf("%f\n", result.currents.ibias);
 
                 tree->Fill();
                 fclose(f);
