@@ -176,19 +176,19 @@ struct Comparator::Comparator_currents_t Comparator::readComparatorCurrents()
     struct Comparator_currents_t icomp;
     struct Comparator_currents_t iscaler;
 
-    iscaler.ibias = 1.0f;
-    iscaler.iamp  = 1.0f;
-    iscaler.ifamp = 1.0f;
-    iscaler.ioff  = 1.0f;
-    iscaler.i3v3  = 1.0f;
-    iscaler.i5v0  = 1.0f;
+    iscaler.ibias = .00010f;
+    iscaler.iamp  = .00010f;
+    iscaler.ifamp = .00010f;
+    iscaler.ioff  = .00010f;
+    iscaler.i3v3  = .02;
+    iscaler.i5v0  = .02;
 
-    icomp.ibias = iscaler.ibias * adc.readVoltage (0);
-    icomp.ioff  = iscaler.ioff  * adc.readVoltage (1);
-    icomp.iamp  = iscaler.iamp  * adc.readVoltage (2);
-    icomp.ifamp = iscaler.ifamp * adc.readVoltage (3);
-    icomp.i3v3  = iscaler.i3v3  * adc.readVoltage (4);
-    icomp.i5v0  = iscaler.i5v0  * adc.readVoltage (5);
+    icomp.ibias = 1000000. * iscaler.ibias * adc.readVoltage (0); //microamps
+    icomp.ioff  = 1000000. * iscaler.ioff  * adc.readVoltage (1); //microamps
+    icomp.iamp  = 1000000. * iscaler.iamp  * adc.readVoltage (2); //microamps
+    icomp.ifamp = 1000000. * iscaler.ifamp * adc.readVoltage (3); //microamps
+    icomp.i3v3  = 1000. * iscaler.i3v3  * adc.readVoltage (4); //milliamps
+    icomp.i5v0  = 1000. * iscaler.i5v0  * adc.readVoltage (5); //milliamps
 
     return icomp;
 }

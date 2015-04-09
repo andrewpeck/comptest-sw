@@ -7,6 +7,7 @@
 class Comparator {
     public:
 
+        /* Holds LCT Comparator Decoded Output */
         struct LCTpattern_t {
             uint32_t halfstrips;
             bool compout;

@@ -187,7 +187,7 @@ void Emulator::dac (int idac, int din, int sclk)
             cdac_value = cdac_word; // Update Comparator Value
             cdac_ibit = 0; // Reset
             cdac_word = 0; //Reset
-            //printf("%i Comparator DAC Set to %i counts (%fV)\n", cdac_ibit, cdac_value, cdac_value * 3.3f / ((1<<14)-1));
+            //printf("%i Comparator DAC Set to %i counts (%fV)\n", cdac_ibit, cdac_value, cdac_value * 3.3f / (0x3FF));
         }
     }
 
@@ -197,7 +197,7 @@ void Emulator::dac (int idac, int din, int sclk)
         pdac_ibit += 1;
         if (pdac_ibit==14) {
             pdac_value = pdac_word;
-            //printf("%i Pulse DAC Set to %i counts (%fV)\n", pdac_ibit, pdac_value, pdac_value * 3.3f / ((1<<14)-1));
+            //printf("%i Pulse DAC Set to %i counts (%fV)\n", pdac_ibit, pdac_value, pdac_value * 3.3f / (0x3FF));
             pdac_ibit = 0;
             pdac_word = 0;
         }
