@@ -1,4 +1,49 @@
 #include "ddd.hpp"
+#include <stdexcept>
+
+void DDD::setDelay (int delay)
+{
+    if (delay < 0)
+        throw std::runtime_error ("DDD Delay Set too Small");
+    if (delay > 120)
+        throw std::runtime_error ("DDD Delay Set too Large");
+
+    /* ddd chip steps in units of 2ns */
+    delay = delay / 2;
+
+    struct ddd_config dddconf;
+    dddconf.ch1enable = true;
+    dddconf.ch2enable = true;
+    dddconf.ch3enable = true;
+    dddconf.ch4enable = true;
+
+    if (delay < 16) {
+        dddconf.ch1delay  = delay;
+        dddconf.ch2delay  = 0;
+        dddconf.ch3delay  = 0;
+        dddconf.ch4delay  = 0;
+    }
+    else if (delay < 32) {
+        dddconf.ch1delay  = 0xF;
+        dddconf.ch2delay  = delay-1*0xF;
+        dddconf.ch3delay  = 0;
+        dddconf.ch4delay  = 0;
+    }
+    else if (delay < 48) {
+        dddconf.ch1delay  = 0xF;
+        dddconf.ch2delay  = 0xF;
+        dddconf.ch3delay  = delay-2*0xF;
+        dddconf.ch4delay  = 0;
+    }
+    else if (delay < 64) {
+        dddconf.ch1delay  = 0xF;
+        dddconf.ch2delay  = 0xF;
+        dddconf.ch3delay  = 0xF;
+        dddconf.ch4delay  = delay-3*0xF;
+    }
+
+    setDelay (dddconf);
+}
 
 void DDD::setDelay (ddd_config config)
 {

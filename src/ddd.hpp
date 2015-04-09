@@ -21,6 +21,7 @@ class DDD {
             int ch4delay;
         };
 
+        void setDelay (int delay);
         void setDelay (ddd_config config);
     private:
         static const uint32_t latch = 0x1 << 0;
