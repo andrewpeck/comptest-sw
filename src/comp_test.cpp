@@ -1,4 +1,5 @@
 #include <string>
+#include <sys/time.h>
 #include <stdexcept>
 #include <iostream>
 #include <fstream>
@@ -101,13 +102,28 @@ static struct TestResult_t scanChip ()
     return result;
 }
 
+static double offset (double threshold) {
+    double secondary_amplitude = threshold * PULSEAMP_SCALE_FACTOR * ATTENUATION_MID;
+    double tertiary_amplitude = threshold * PULSEAMP_SCALE_FACTOR  * ATTENUATION_HIGH;
+
+    double offset=tertiary_amplitude-secondary_amplitude;
+    return offset;
+}
+
 static std::string now()
 {
     /* Logging */
     char datestr [80];
     time_t now = time(NULL);
     struct tm *t = localtime(&now);
-    strftime(datestr, sizeof(datestr)-1, "%Y%m%d-%H%M%s", t);
+    strftime(datestr, sizeof(datestr)-1, "%Y%m%d-%H%M%S", t);
+
+    timeval curTime;
+    gettimeofday(&curTime, NULL);
+    int millis = curTime.tv_usec / 1000;
+
+    sprintf(datestr, "%s%03i", datestr, millis);
+
     std::string filename = datestr;
     return filename;
 }
@@ -200,9 +216,8 @@ static void writeAsciiLogFile (std::string filename, struct TestResult_t result)
     if (filename=="stdout")
         log = stdout;
     else {
-    filename += ".log";
-    filename = "log/" + filename;
-    log = fopen(filename.c_str(), "w");
+        filename  = "log/" + filename + ".log";
+        log = fopen(filename.c_str(), "w");
     }
 
     struct TestResult_t checkedResult = checkResult (result);
