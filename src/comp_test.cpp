@@ -177,32 +177,32 @@ static int countErrors (struct TestResult_t checkedResult)
 {
     int errors = 0;
     for (int i=0; i<15; i++) {
-        if (!!!checkedResult.thresh_l [i])
+        if (!checkedResult.thresh_l [i])
             errors += 1;
-        if (!!!checkedResult.thresh_r [i])
+        if (!checkedResult.thresh_r [i])
             errors += 1;
     }
     for (int i=0; i<14; i++) {
-        if (!!!checkedResult.offset_l [i])
+        if (!checkedResult.offset_l [i])
             errors += 1;
-        if (!!!checkedResult.offset_r [i])
+        if (!checkedResult.offset_r [i])
             errors += 1;
     }
 
-    if (!!!checkedResult.thresh_delta )
+    if (!checkedResult.thresh_delta )
         errors += 1;
 
-    if (!!!checkedResult.currents.ibias )
+    if (!checkedResult.currents.ibias )
         errors += 1;
-    if (!!!checkedResult.currents.iamp  )
+    if (!checkedResult.currents.iamp  )
         errors += 1;
-    if (!!!checkedResult.currents.ifamp )
+    if (!checkedResult.currents.ifamp )
         errors += 1;
-    if (!!!checkedResult.currents.ioff  )
+    if (!checkedResult.currents.ioff  )
         errors += 1;
-    if (!!!checkedResult.currents.i3v3  )
+    if (!checkedResult.currents.i3v3  )
         errors += 1;
-    if (!!!checkedResult.currents.i5v0  )
+    if (!checkedResult.currents.i5v0  )
         errors += 1;
 
     return errors;
