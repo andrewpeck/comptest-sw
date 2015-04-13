@@ -215,28 +215,28 @@ int Emulator::adc (int mosi, int sclk, int cs)
     if (adc_ibit==3) {
         int channel = (adc_word>>12) & 0xF;
 
+        //printf("noise %f\n", noise);
         std::normal_distribution<double> distribution(0.0,20.0);
         double noise = distribution(generator);
-        //printf("noise %f\n", noise);
 
         switch (channel) {
             case 0x0:
                 word_out = 200+noise;
                 break;
             case 0x1:
-                word_out = 220+noise;
+                word_out = 200+noise;
                 break;
             case 0x2:
-                word_out = 190+noise;
+                word_out = 200+noise;
                 break;
             case 0x3:
-                word_out = 240+noise;
+                word_out = 200+noise;
                 break;
             case 0x4:
-                word_out = 260+noise;
+                word_out = 200+noise;
                 break;
             case 0x5:
-                word_out = 170+noise;
+                word_out = 200+noise;
                 break;
         }
 
