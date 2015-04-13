@@ -9,6 +9,7 @@
 #include "mux.hpp"
 #include "ddd.hpp"
 #include "comp_test.hpp"
+#include "test_params.hpp"
 
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
@@ -20,6 +21,9 @@
 #define ANSI_BOLD          "\033[1m"
 #define ANSI_RESET         "\033[0m"
 
+static const Comparator::PKmode_t   PKMODE = Comparator::PKMODE0;
+static const Comparator::PKtime_t   PKTIME = Comparator::PKTIME150;
+
 /* TODO: Definition of OFFSET is wrong
  *       need to calculate the difference between left and right amplitudes
  *
@@ -30,55 +34,6 @@
  * TODO: colored output
  */
 
-/* Test Parameters */
-static const float PASS_THRESHOLD   = 0.5;
-static const int   NUM_PULSES       = 1000;
-static const int   CDAC_VALUE       = 120;
-static const int   PDAC_MIN         = 0;
-static const int   PDAC_MAX         = 200;
-static const int   SCAN_GRANULARITY = 2;
-static const int   DDD_DELAY        = 0;
-static const int   TRIAD_PERSIST    = 0;
-static const int   TRIAD_PERSIST1   = 1;
-static const int   COMPIN_INJECT    = 0;
-
-static const Comparator::PKmode_t   PKMODE = Comparator::PKMODE0;
-static const Comparator::PKtime_t   PKTIME = Comparator::PKTIME150;
-
-static const float PULSEAMP_SCALE_FACTOR = 0.04f;
-
-static const float REF_THRESH_LOW  = +9.0;
-static const float REF_THRESH_HIGH = +16.0;
-
-static const float REF_OFFSET_LOW  = -5;
-static const float REF_OFFSET_HIGH = +5;
-
-/* Ref==20uA */
-static const float REF_IBIAS_LOW = 0.f;
-static const float REF_IBIAS_HIGH = 32.0f;
-
-/* Ref=10uA */
-static const float REF_IAMP_LOW  = 0.f;
-static const float REF_IAMP_HIGH  = 32.0f;
-
-/* Ref==2uA */
-static const float REF_IOFF_LOW  = 0.f;
-static const float REF_IOFF_HIGH  = 32.0f;
-
-/* Ref 10uA */
-static const float REF_IFAMP_LOW = 0.f;
-static const float REF_IFAMP_HIGH = 32.0f;
-
-/* Ref== */
-static const float REF_I3V3_LOW  = 0.f;
-static const float REF_I3V3_HIGH  = 8.0f;
-
-/* Ref */
-static const float REF_I5V0_LOW  = 0.f;
-static const float REF_I5V0_HIGH  = 8.0f;
-
-static const float REF_THRESH_DELTA_LOW =0.f;
-static const float REF_THRESH_DELTA_HIGH=7.f;
 
 static Comparator comp;
 static CDAC       cdac;
