@@ -89,11 +89,11 @@ static struct TestResult_t scanChip ()
     result.thresh_delta = thresh_max - thresh_min;
 
     for (int strip=0; strip<15; strip++) {
-        result.offset_l [strip] = result.thresh_l[strip+1]-result.thresh_l[strip];
+        result.offset_l [strip] = offset(result.thresh_l[strip]);
     }
 
     for (int strip=0; strip<15; strip++) {
-        result.offset_r [strip] = result.thresh_r[strip]-result.thresh_r[strip+1];
+        result.offset_r [strip] = offset(result.thresh_r[strip]);
     }
 
     result.currents= comp.readComparatorCurrents();
