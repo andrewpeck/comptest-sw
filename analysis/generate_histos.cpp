@@ -26,7 +26,7 @@ void generate_histos ()
 
     /* IBIAS */
     currents->cd(1);
-    TH1D *h_ibias = new TH1D("ibias", "ibias current (uA)", 100, 0, 30);
+    TH1D *h_ibias = new TH1D("ibias", "ibias current (uA)", 50, 0, 30);
     h_ibias->GetXaxis()->SetTitle("current (mA)");
 
     //TLeaf *leaf = results->GetLeaf("ibias");
@@ -49,7 +49,7 @@ void generate_histos ()
     /* IAMP */
     currents->cd(2);
 
-    TH1D *iamp = new TH1D("iamp", "iamp current (uA)", 100, 0, 20);
+    TH1D *iamp = new TH1D("iamp", "iamp current (uA)", 50, 0, 20);
     iamp->GetXaxis()->SetTitle("current (mA)");
     results->Draw("iamp>>iamp", "iamp>0");
     currents->Update();
@@ -61,7 +61,7 @@ void generate_histos ()
     currents->Update();
 
     currents->cd(3);
-    TH1D *ifamp = new TH1D("ifamp", "ifamp current (uA)", 100, 0, 20);
+    TH1D *ifamp = new TH1D("ifamp", "ifamp current (uA)", 50, 0, 20);
     ifamp->GetXaxis()->SetTitle("current (mA)");
     results->Draw("ifamp>>ifamp", "ifamp>0");
     currents->Update();
@@ -73,7 +73,7 @@ void generate_histos ()
     currents->Update();
 
     currents->cd(4);
-    TH1D *ioff = new TH1D("ioff", "ioff current (uA)", 100, 0, 5);
+    TH1D *ioff = new TH1D("ioff", "ioff current (uA)", 50, 0, 5);
     ioff->GetXaxis()->SetTitle("current (mA)");
     results->Draw("ioff>>ioff", "ioff>0");
     currents->Update();
@@ -87,7 +87,7 @@ void generate_histos ()
     /* Supply Currents */
 
     currents->cd(5);
-    TH1D *i3v3 = new TH1D("i3v3", "i3v3 current (mA)", 100, 0, 10);
+    TH1D *i3v3 = new TH1D("i3v3", "i3v3 current (mA)", 50, 0, 10);
     i3v3->GetXaxis()->SetTitle("current (mA)");
     results->Draw("i3v3>>i3v3", "i3v3>0");
     currents->Update();
@@ -99,7 +99,7 @@ void generate_histos ()
     currents->Update();
 
     currents->cd(6);
-    TH1D *i5v0 = new TH1D("i5v0", "i5v0 current (mA)", 100, 0, 10);
+    TH1D *i5v0 = new TH1D("i5v0", "i5v0 current (mA)", 50, 0, 10);
     i5v0->GetXaxis()->SetTitle("current (mA)");
     results->Draw("i5v0>>i5v0", "i5v0>0");
     currents->Update();
@@ -170,7 +170,7 @@ void generate_histos ()
     // /* Threshold Delta Spread */
 
     TCanvas *delta = new TCanvas("Threshold Delta Spread", "LCT Comparator Threshold Delta Spread", 600,400);
-    TH1D *delta_thresh = new TH1D("delta_thresh", "delta_thresh (thresh max-min)", 100, 0, 10);
+    TH1D *delta_thresh = new TH1D("delta_thresh", "delta_thresh (thresh max-min)", 50, 0, 10);
     delta_thresh->GetXaxis()->SetTitle("delta_thresh (mV)");
     results->Draw("delta_thresh>>delta_thresh", "delta_thresh>0");
     delta->Update();
