@@ -58,8 +58,8 @@ void generate_tree () {
     tree->Branch("offset_l", result.offset_l,  "offset_l[15]/D");
     tree->Branch("offset_r", result.offset_r,  "offset_r[15]/D");
 
-    const char *dirname = "../log/raw/";
-    TSystemDirectory dir(dirname, dirname);
+    std::string dirname= "../log/raw/";
+    TSystemDirectory dir(dirname.c_str(), dirname.c_str());
     TList *files = dir.GetListOfFiles();
     if (files) {
         TSystemFile *file;
@@ -69,22 +69,19 @@ void generate_tree () {
             fname = file->GetName();
             if (!file->IsDirectory() && fname.EndsWith(".dat")) {
 
-                std::string filename = dirname + fname;
+                std::string filename =dirname + fname.Data();
                 FILE *f;
                 if ( (f=fopen(filename.c_str(),"rb")) == NULL) {
                     printf("File not found\n");
-                    cout << filename << endl;
                 }
 
                 fread(&result, sizeof(result), 1,f);
                 tree->Fill();
                 fclose(f);
-                //    cout << fname.Data() << endl;
             }
         }
     }
 
     tree->Write();
-    //tree->MakeCode("fastcode.cpp");
     outfile->Close();
 }
