@@ -9,14 +9,14 @@
 class DAC {
     public:
         void write (int dac_counts);
-        void writeVoltage (float voltage);
+        void writeVoltage (double voltage);
 
-        float voltage (int dac_counts);
+        double voltage (int dac_counts);
 
         int m_dac;
 
     protected:
-        static const float VREF;
+        static const double VREF;
 
         void setPulseDAC();
         void setCompDAC();

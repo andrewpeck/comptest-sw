@@ -38,13 +38,13 @@ void DAC::write (int dac_counts)
 
 }
 
-float DAC::voltage(int dac_counts)
+double DAC::voltage(int dac_counts)
 {
-    float DAC_REFERENCE = 3.3f;
-    return (dac_counts / static_cast<float>(0x3FF) * DAC_REFERENCE);
+    double DAC_REFERENCE = 3.3f;
+    return (dac_counts / static_cast<double>(0x3FF) * DAC_REFERENCE);
 }
 
-void DAC::writeVoltage (float voltage)
+void DAC::writeVoltage (double voltage)
 {
     int dac_counts = static_cast<int>((0x3FF)*(voltage/VREF));
     write(dac_counts);
@@ -71,4 +71,4 @@ const uint32_t DAC::en  [] = {0x1 << 5,       0x1 << 6};
 const uint32_t DAC::din [] = {0x1 << 6,       0x1 << 7};
 const uint32_t DAC::clk [] = {0x1 << 7,       0x1 << 8};
 
-const float DAC::VREF = 3.3f;
+const double DAC::VREF = 3.3f;

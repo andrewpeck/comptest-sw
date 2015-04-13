@@ -8,7 +8,7 @@ class ADC {
     public:
         ADC();
         int read (int channel);
-        float readVoltage (int channel);
+        double readVoltage (int channel);
     private:
         enum OutputFormat    { OF_BOB, OF_USB, OF_BTC };
         enum SamplePeriod    { SP_LONG, SP_SHORT };

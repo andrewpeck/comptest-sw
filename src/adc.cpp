@@ -15,10 +15,10 @@ int ADC::read (int channel)
     return data;
 }
 
-float ADC::readVoltage(int channel)
+double ADC::readVoltage(int channel)
 {
-    float VREF = 5.0f;
-    float voltage = VREF * (float)read(channel) / (0xFFF);
+    double VREF = 5.0f;
+    double voltage = VREF * (double)read(channel) / (0xFFF);
     return voltage;
 }
 

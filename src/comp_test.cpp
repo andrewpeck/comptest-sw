@@ -113,9 +113,9 @@ static struct TestResult_t scanChip ()
     struct TestResult_t result;
     result.currents = comp.readComparatorCurrents();
 
-    float thresh_max = std::numeric_limits<float>::min();
-    float thresh_min = std::numeric_limits<float>::max();
-    float thresh;
+    double thresh_max = std::numeric_limits<double>::min();
+    double thresh_min = std::numeric_limits<double>::max();
+    double thresh;
 
     for (int strip=0; strip<16; strip++) {
         thresh = scanThreshold(strip, LEFT);
@@ -281,20 +281,7 @@ static void writeAsciiLogFile (std::string filename, struct TestResult_t result)
     fclose (log);
 }
 
-//static void printAsciiLogFile (std::string filename)
-//{
-//    filename += ".log";
-//    filename = "log/" + filename;
-//
-//    std::ifstream fin(filename);
-//    std::string buffer;
-//    while (getline(fin, buffer))
-//        std::cout << buffer << std::endl;
-//    fin.close();
-//}
-
-
-static float scanThreshold(int strip, int side)
+static double scanThreshold(int strip, int side)
 {
     /* Sanitizer */
     if (side!=LEFT && side!=RIGHT)
@@ -342,10 +329,11 @@ static float scanThreshold(int strip, int side)
             comp.firePulse();
         }
         int errors = comp.readHalfstripsErrcnt();
-        errors += comp.readCompoutErrcnt();
+        errors    += comp.readCompoutErrcnt();
 
-        if ((float(errors) / NUM_PULSES) < PASS_THRESHOLD) {
-            return (1000*pdac.voltage(dac_value)*PULSEAMP_SCALE_FACTOR); // we want millivolts
+        if ((double(errors) / NUM_PULSES) < PASS_THRESHOLD) {
+            /* we want millivolts */
+            return (1000*pdac.voltage(dac_value)*PULSEAMP_SCALE_FACTOR*ATTENUATION_LOW);
         }
     }
 

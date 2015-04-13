@@ -35,12 +35,12 @@ class Comparator {
         void writePatternExpect (struct LCTpattern_t expect);
 
         struct Comparator_currents_t {
-            float ibias;
-            float iamp;
-            float ifamp;
-            float ioff;
-            float i3v3;
-            float i5v0;
+            double ibias;
+            double iamp;
+            double ifamp;
+            double ioff;
+            double i3v3;
+            double i5v0;
         };
 
         struct Comparator_currents_t readComparatorCurrents();
