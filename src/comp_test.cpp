@@ -241,8 +241,8 @@ static void writeAsciiLogFile (std::string filename, struct TestResult_t result)
 
     fprintf(log, ANSI_BOLD "\nOffset:        (left>right)                    (right>left)\n" ANSI_RESET);
     for (int i=0; i<14; i++) {
-        fprintf(log,"\t%s Channel %02i: % 06.3f mV", isPassed(checkedResult.offset_l[i]).c_str(), i+1, result.offset_l[i]);
-        fprintf(log,"\t%s Channel %02i: % 06.3f mV\n", isPassed(checkedResult.offset_r[i]).c_str(), i+1, result.offset_r[i]);
+        fprintf(log,"\t%s Channel %02i: % 07.4f mV", isPassed(checkedResult.offset_l[i]).c_str(), i+1, result.offset_l[i]);
+        fprintf(log,"\t%s Channel %02i: % 07.4f mV\n", isPassed(checkedResult.offset_r[i]).c_str(), i+1, result.offset_r[i]);
     }
 
     int num_errors = countErrors(checkedResult);
