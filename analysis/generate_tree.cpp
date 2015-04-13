@@ -2,40 +2,38 @@
 #include <TROOT.h>
 #include <TTree.h>
 #include <TBranch.h>
-#include <dirent.h>
 
 struct Comparator_currents_t {
-    float ibias;
-    float iamp;
-    float ifamp;
-    float ioff;
-    float i3v3;
-    float i5v0;
+    double ibias;
+    double iamp;
+    double ifamp;
+    double ioff;
+    double i3v3;
+    double i5v0;
 };
 
 struct TestResult_t
 {
-    float  thresh_l [16];
-    float  thresh_r [16];
-    float  offset_l [15];
-    float  offset_r [15];
+    double  thresh_l [16];
+    double  thresh_r [16];
+    double  offset_l [15];
+    double  offset_r [15];
     struct Comparator_currents_t currents;
-    float thresh_delta;
+    double thresh_delta;
 };
 
-
 void generate_tree () {
-    float *ibias;
-    float *iamp;
-    float *ifamp;
-    float *ioff;
-    float *i3v3;
-    float *i5v0;
-    float  thresh_l [16];
-    float  thresh_r [16];
-    float  offset_l [15];
-    float  offset_r [15];
-    float *thresh_delta;
+    double *ibias;
+    double *iamp;
+    double *ifamp;
+    double *ioff;
+    double *i3v3;
+    double *i5v0;
+    double  thresh_l [16];
+    double  thresh_r [16];
+    double  offset_l [15];
+    double  offset_r [15];
+    double *thresh_delta;
 
     //open tfile
     TFile *outfile = new TFile("results.root", "RECREATE");
@@ -45,56 +43,48 @@ void generate_tree () {
 
     TestResult_t result;
 
-    tree->Branch("ibias", &result.currents.ibias,"ibias/F");
-    tree->Branch("iamp",  &result.currents.iamp,  "iamp/F");
-    tree->Branch("ifamp", &result.currents.ifamp,"ifamp/F");
-    tree->Branch("ioff",  &result.currents.ioff,  "ioff/F");
-    tree->Branch("i3v3",  &result.currents.i3v3,  "i3v3/F");
-    tree->Branch("i5v0",  &result.currents.i5v0,  "i5v0/F");
+    tree->Branch("ibias", &result.currents.ibias,"ibias/D");
+    tree->Branch("iamp",  &result.currents.iamp,  "iamp/D");
+    tree->Branch("ifamp", &result.currents.ifamp,"ifamp/D");
+    tree->Branch("ioff",  &result.currents.ioff,  "ioff/D");
+    tree->Branch("i3v3",  &result.currents.i3v3,  "i3v3/D");
+    tree->Branch("i5v0",  &result.currents.i5v0,  "i5v0/D");
 
-    tree->Branch("thresh_l", result.thresh_l,  "thresh_l[16]/F");
-    tree->Branch("thresh_r", result.thresh_r,  "thresh_r[16]/F");
+    tree->Branch("thresh_l", result.thresh_l,  "thresh_l[16]/D");
+    tree->Branch("thresh_r", result.thresh_r,  "thresh_r[16]/D");
 
-    tree->Branch("delta_thresh", &result.thresh_delta, "thresh_delta/F");
+    tree->Branch("delta_thresh", &result.thresh_delta, "thresh_delta/D");
 
-    tree->Branch("offset_l", result.offset_l,  "offset_l[15]/F");
-    tree->Branch("offset_r", result.offset_r,  "offset_r[15]/F");
+    tree->Branch("offset_l", result.offset_l,  "offset_l[15]/D");
+    tree->Branch("offset_r", result.offset_r,  "offset_r[15]/D");
 
+    const char *dirname = "../log/raw/";
+    TSystemDirectory dir(dirname, dirname);
+    TList *files = dir.GetListOfFiles();
+    if (files) {
+        TSystemFile *file;
+        TString fname;
+        TIter next(files);
+        while ((file=(TSystemFile*)next())) {
+            fname = file->GetName();
+            if (!file->IsDirectory() && fname.EndsWith(".dat")) {
 
-    //int split = 1;
-    //int bufsize = 64000;
-    //tree->Branch("chip", &result, bufsize, split);
-
-    DIR *dir;
-    struct dirent *ent;
-    if ((dir = opendir ("../log/raw")) != NULL) {
-        /* print all the files and directories within directory */
-        while ((ent = readdir (dir)) != NULL) {
-            std::string filename = ent->d_name;
-            if (filename=="." || filename=="..")
-                continue;
-            else {
-                filename = "../log/raw/" + filename;
-                //printf (") %s\n", ent->d_name);
-
-                //open the binary waveform file
+                std::string filename = dirname + fname;
                 FILE *f;
-                //cout << filename;
-                if ( (f=fopen(filename.c_str(),"rb")) == NULL)
-                    cout << "File not found\n";
+                if ( (f=fopen(filename.c_str(),"rb")) == NULL) {
+                    printf("File not found\n");
+                    cout << filename << endl;
+                }
 
                 fread(&result, sizeof(result), 1,f);
-
                 tree->Fill();
                 fclose(f);
+                //    cout << fname.Data() << endl;
             }
         }
-        closedir (dir);
-    } else {
-        perror ("");
-        /* could not open directory */
-        //return EXIT_FAILURE;
     }
+
     tree->Write();
+    //tree->MakeCode("fastcode.cpp");
     outfile->Close();
 }
