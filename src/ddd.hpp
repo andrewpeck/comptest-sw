@@ -5,8 +5,7 @@
 #include "registers.hpp"
 #include <stdint.h>
 
-class DDD {
-    public:
+namespace DDD {
         struct ddd_config {
             bool ch1enable;
             int ch1delay;
@@ -23,12 +22,6 @@ class DDD {
 
         void setDelay (int delay);
         void setDelay (ddd_config config);
-    private:
-        static const uint32_t latch = 0x1 << 0;
-        static const uint32_t mosi  = 0x1 << 1;
-        static const uint32_t sclk  = 0x1 << 2;
-        static const uint32_t miso  = 0x1 << 3;
 
-        Serial serial;
 };
 #endif

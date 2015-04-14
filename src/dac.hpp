@@ -28,8 +28,6 @@ class DAC {
         static const uint32_t din[2];
         static const uint32_t clk[2];
         static const uint32_t adr[2];
-
-        Serial serial;
 };
 
 class PDAC : public DAC {

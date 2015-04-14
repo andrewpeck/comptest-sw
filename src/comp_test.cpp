@@ -7,7 +7,7 @@
 
 #include "lctcomp.hpp"
 #include "dac.hpp"
-#include "mux.hpp"
+#include "Mux.hpp"
 #include "ddd.hpp"
 #include "comp_test.hpp"
 #include "test_params.hpp"
@@ -25,21 +25,23 @@
 static const Comparator::PKmode_t   PKMODE = Comparator::PKMODE0;
 static const Comparator::PKtime_t   PKTIME = Comparator::PKTIME150;
 
-/* TODO: figure out what the hell to do with COMPIN
-*/
+/*
+ * TODO: figure out what the hell to do with COMPIN
+ */
 
 
-static Comparator comp;
+//static Comparator comp;
 static CDAC       cdac;
 static PDAC       pdac;
-static DDD        ddd;
-static Mux        mux;
 
 int main (int argc, char** argv)
 {
+    Serial::open();
+    ADC::init();
+
     using namespace ComparatorTest;
 
-    ddd.setDelay(DDD_DELAY);
+    DDD::setDelay(DDD_DELAY);
     initializeLCT();
     struct TestResult_t result = scanChip();
 
@@ -47,25 +49,27 @@ int main (int argc, char** argv)
     writeLogFile (filename, result);      // Saves binary record of the raw test result
     writeAsciiLogFile (filename, result); // Writes ASCII Log File
     writeAsciiLogFile ("stdout", result); // Writes ASCII Log File
+    Serial::close();
 }
 
 namespace ComparatorTest {
+
     void initializeLCT()
     {
         cdac.write(CDAC_VALUE);
-        comp.writeBxDelay(BX_DELAY);
-        comp.writePulseWidth(PULSE_WIDTH);
+        Comparator::writeBxDelay(BX_DELAY);
+        Comparator::writePulseWidth(PULSE_WIDTH);
 
-        comp.writePeakMode(PKMODE);    // what should this be?
-        comp.writePeakTime(PKTIME);    // what should this be?
-        comp.writeTriadPersist(TRIAD_PERSIST,TRIAD_PERSIST1);   // what should this be?
-        comp.writeCompinInject(0);     // what should this be?
+        Comparator::writePeakMode(PKMODE);    // what should this be?
+        Comparator::writePeakTime(PKTIME);    // what should this be?
+        Comparator::writeTriadPersist(TRIAD_PERSIST,TRIAD_PERSIST1);   // what should this be?
+        Comparator::writeCompinInject(0);     // what should this be?
     }
 
     struct TestResult_t scanChip ()
     {
         auto result = testAllStrips();
-        result.currents= comp.readComparatorCurrents();
+        result.currents= Comparator::readComparatorCurrents();
         return result;
     }
 
@@ -229,25 +233,28 @@ namespace ComparatorTest {
         if (strip<0 && strip>15)
             throw std::runtime_error ("Invalid Strip");
 
-        comp.writeLCTReset(1);
+        Comparator::writeLCTReset(1);
 
         /* Configure Muxes and Write Pattern Expect */
         Mux::MuxConfig_t muxconfig;
-        mux.configAllChannelsOff(muxconfig);
+        Mux::configAllChannelsOff(muxconfig);
 
         if (side==LEFT)
-            mux.configStripLH(strip, muxconfig);
+            Mux::configStripLH(strip, muxconfig);
         else if (side==RIGHT)
-            mux.configStripRH(strip, muxconfig);
+            Mux::configStripRH(strip, muxconfig);
 
-        mux.writeConfig(muxconfig);
+        Mux::writeConfig(muxconfig);
 
         Comparator::LCTpattern_t pat;
-        pat.halfstrips = mux.configToHalfstripMap(muxconfig);
-        pat.compout = mux.configToCompoutExpect(muxconfig);
-        comp.writePatternExpect(pat);
 
-        comp.writeCompinInject(0);
+        pat.halfstrips = Mux::configToHalfstripMap(muxconfig);
+        pat.compout = Mux::configToCompoutExpect(muxconfig);
+
+        Comparator::writePatternExpect(pat);
+        Comparator::writeActiveStripMask(0x1 << (strip));
+
+        Comparator::writeCompinInject(0);
 
         ScanResult_t result;
         result.thresh = ~0;
@@ -261,25 +268,25 @@ namespace ComparatorTest {
             pdac.write(dac_value);
             usleep(10);
 
-            comp.writeLCTReset(0);
+            Comparator::writeLCTReset(0);
 
-            comp.resetHalfstripsErrcnt();
-            comp.resetCompoutErrcnt();
-            comp.resetThresholdsErrcnt();
+            Comparator::resetHalfstripsErrcnt();
+            Comparator::resetCompoutErrcnt();
+            Comparator::resetThresholdsErrcnt();
 
             for (int ipulse=0; ipulse < NUM_PULSES; ipulse++) {
-                while (!comp.isPulserReady());
-                comp.firePulse();
+                while (!Comparator::isPulserReady());
+                Comparator::firePulse();
             }
 
-            errors = comp.readThresholdsErrcnt();
+            errors = Comparator::readThresholdsErrcnt();
             if ((double(errors) / NUM_PULSES) < PASS_THRESHOLD) {
                 result.thresh = (1000*pdac.voltage(dac_value)*PULSEAMP_SCALE_FACTOR*ATTENUATION_LOW);
                 threshold_found = 1;
             }
 
-            errors  = comp.readHalfstripsErrcnt();
-            errors += comp.readCompoutErrcnt();
+            errors  = Comparator::readHalfstripsErrcnt();
+            errors += Comparator::readCompoutErrcnt();
 
             if ((double(errors) / NUM_PULSES) < PASS_THRESHOLD) {
                 /* we want millivolts */

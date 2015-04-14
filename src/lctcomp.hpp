@@ -4,59 +4,57 @@
 #include "serial.hpp"
 #include "registers.hpp"
 #include "adc.hpp"
-class Comparator {
-    public:
 
-        /* Holds LCT Comparator Decoded Output */
-        struct LCTpattern_t {
-            uint32_t halfstrips;
-            bool compout;
-        };
+namespace Comparator {
 
-        // Check pattern, expect vs. read
-        // return number of errors
-        int patternCheck (struct LCTpattern_t expect, struct LCTpattern_t read);
-        void printPattern (struct LCTpattern_t pattern);
-        struct LCTpattern_t patternRead ();
+    /* Holds LCT Comparator Decoded Output */
+    struct LCTpattern_t {
+        uint32_t halfstrips;
+        bool compout;
+    };
 
-        int readHalfstripsErrcnt();
-        int readThresholdsErrcnt();
-        int readCompoutErrcnt();
+    // Check pattern, expect vs. read
+    // return number of errors
+    int patternCheck (struct LCTpattern_t expect, struct LCTpattern_t read);
+    void printPattern (struct LCTpattern_t pattern);
+    struct LCTpattern_t patternRead ();
 
-        void resetHalfstripsErrcnt();
-        void resetCompoutErrcnt();
-        void resetThresholdsErrcnt();
+    int readHalfstripsErrcnt();
+    int readThresholdsErrcnt();
+    int readCompoutErrcnt();
 
-        enum PKmode_t { PKMODE0, PKMODE1, PKMODE2 };
-        enum PKtime_t { PKTIME25, PKTIME50, PKTIME75, PKTIME100, PKTIME125, PKTIME150, PKTIME175, PKTIME200 };
+    void resetHalfstripsErrcnt();
+    void resetCompoutErrcnt();
+    void resetThresholdsErrcnt();
 
-        void writePeakMode (PKmode_t peakmode);
-        void writePeakTime (PKtime_t peaktime);
-        void writePulseWidth (int width);
-        void writeBxDelay (int delay);
+    enum PKmode_t { PKMODE0, PKMODE1, PKMODE2 };
+    enum PKtime_t { PKTIME25, PKTIME50, PKTIME75, PKTIME100, PKTIME125, PKTIME150, PKTIME175, PKTIME200 };
 
-        void writePatternExpect (struct LCTpattern_t expect);
+    void writePeakMode (PKmode_t peakmode);
+    void writePeakTime (PKtime_t peaktime);
+    void writePulseWidth (int width);
+    void writeBxDelay (int delay);
 
-        struct Comparator_currents_t {
-            double ibias;
-            double iamp;
-            double ifamp;
-            double ioff;
-            double i3v3;
-            double i5v0;
-        };
+    void writePatternExpect (struct LCTpattern_t expect);
+    void writeActiveStripMask (uint16_t mask);
 
-        struct Comparator_currents_t readComparatorCurrents();
+    struct Comparator_currents_t {
+        double ibias;
+        double iamp;
+        double ifamp;
+        double ioff;
+        double i3v3;
+        double i5v0;
+    };
 
-        void writeTriadPersist(int persist, bool persist1);
-        void writeLCTReset (bool state);
-        void firePulse();
-        bool isPulserReady();
-        void writeCompinInject(bool state);
+    struct Comparator_currents_t readComparatorCurrents();
 
-    private:
-        Serial serial;
-        ADC adc;
+    void writeTriadPersist(int persist, bool persist1);
+    void writeLCTReset (bool state);
+    void firePulse();
+    bool isPulserReady();
+    void writeCompinInject(bool state);
+
 };
 
 #endif

@@ -4,17 +4,17 @@
 void DAC::write (int dac_counts)
 {
     /* Set Inactive */
-    uint32_t status = serial.read(adr[m_dac]);
+    uint32_t status = Serial::read(adr[m_dac]);
     status &= ~clk[m_dac];
     status &= ~din[m_dac];
     status |=  en[m_dac];
-    serial.write(adr[m_dac], status);
+    Serial::write(adr[m_dac], status);
 
     for (int iclk=0; iclk<14; iclk++)
     {
         /* Clock LOW */
         status &= ~clk[m_dac];
-        serial.write(adr[m_dac], status);
+        Serial::write(adr[m_dac], status);
 
         /* Chip select Active,
          * Set data bit */
@@ -22,19 +22,19 @@ void DAC::write (int dac_counts)
         status &= ~en[m_dac];
         status &= ~(din[m_dac]);
         status |= data_bit;
-        serial.write(adr[m_dac], status);
+        Serial::write(adr[m_dac], status);
 
         /* Clock High */
         status |= clk[m_dac];
-        serial.write(adr[m_dac], status);
+        Serial::write(adr[m_dac], status);
     }
 
     /* Set Inactive */
-    status = serial.read(adr[m_dac]);
+    status = Serial::read(adr[m_dac]);
     status &= ~clk[m_dac]; // CLK Low
     status &= ~din[m_dac]; // Data Low
     status |=  en[m_dac];  // CS High
-    serial.write(adr[m_dac], status);
+    Serial::write(adr[m_dac], status);
 
 }
 
