@@ -15,6 +15,7 @@ uint32_t Emulator::REG_HALFSTRIPS_ERRCNT = 1000;
 uint32_t Emulator::REG_COMPOUT_ERRCNT    = 0;
 uint32_t Emulator::REG_ADC               = 0;
 uint32_t Emulator::REG_DDD               = 0;
+uint32_t Emulator::REG_THRESHOLDS_ERRCNT = 0;
 
 uint16_t Emulator::cdac_value = 1234;
 uint16_t Emulator::pdac_value = 1234;
@@ -55,16 +56,29 @@ uint32_t Emulator::read (uint8_t adr)
             {
                 std::normal_distribution<double> distribution(0.0,15.0);
 
-                if ((distribution(generator)+pdac_value) > cdac_value)
+                if ((distribution(generator)+pdac_value) > (cdac_value))
                     REG_HALFSTRIPS_ERRCNT = 0;
                 else
                     REG_HALFSTRIPS_ERRCNT = 1000 + (5-distribution(generator));
                 return REG_HALFSTRIPS_ERRCNT;
                 break;
             }
+        case ADR_THRESHOLDS_ERRCNT:
+            {
+                std::normal_distribution<double> distribution(0.0,15.0);
+
+                if ((distribution(generator)+pdac_value) > (cdac_value-20))
+                    REG_THRESHOLDS_ERRCNT = 0;
+                else
+                    REG_THRESHOLDS_ERRCNT = 1000;
+                return REG_THRESHOLDS_ERRCNT;
+                break;
+            }
         case ADR_COMPOUT_ERRCNT:
-            return REG_COMPOUT_ERRCNT;
-            break;
+            {
+                return REG_COMPOUT_ERRCNT;
+                break;
+            }
         case ADR_ADC:
             {
                 //printf("c. REG_ADC: %08X\n", REG_ADC);

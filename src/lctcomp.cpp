@@ -36,6 +36,12 @@ int Comparator::readHalfstripsErrcnt()
     return errcnt;
 }
 
+int Comparator::readThresholdsErrcnt()
+{
+    int errcnt = serial.read(ADR_THRESHOLDS_ERRCNT);
+    return errcnt;
+}
+
 int Comparator::readCompoutErrcnt()
 {
     int errcnt = serial.read(ADR_COMPOUT_ERRCNT);
@@ -59,6 +65,16 @@ void Comparator::resetCompoutErrcnt()
     status |= 0x1 << 9; //halfstrips_errcnt
     serial.write(adr, status);
     status &= ~(0x1 << 9);
+    serial.write(adr, status);
+}
+
+void Comparator::resetThresholdsErrcnt()
+{
+    uint8_t adr = ADR_PULSE_CTRL;
+    uint32_t status = serial.read (adr);
+    status |= 0x1 << 23;
+    serial.write(adr, status);
+    status &= ~(0x1 << 23);
     serial.write(adr, status);
 }
 

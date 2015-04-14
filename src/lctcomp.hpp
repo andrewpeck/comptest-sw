@@ -20,9 +20,12 @@ class Comparator {
         struct LCTpattern_t patternRead ();
 
         int readHalfstripsErrcnt();
+        int readThresholdsErrcnt();
         int readCompoutErrcnt();
+
         void resetHalfstripsErrcnt();
         void resetCompoutErrcnt();
+        void resetThresholdsErrcnt();
 
         enum PKmode_t { PKMODE0, PKMODE1, PKMODE2 };
         enum PKtime_t { PKTIME25, PKTIME50, PKTIME75, PKTIME100, PKTIME125, PKTIME150, PKTIME175, PKTIME200 };

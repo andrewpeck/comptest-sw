@@ -16,8 +16,8 @@ struct TestResult_t
 {
     double  thresh_l [16];
     double  thresh_r [16];
-    double  offset_l [15];
-    double  offset_r [15];
+    double  offset_l [16];
+    double  offset_r [16];
     struct Comparator_currents_t currents;
     double thresh_delta;
 };
@@ -31,8 +31,8 @@ void generate_tree () {
     double *i5v0;
     double  thresh_l [16];
     double  thresh_r [16];
-    double  offset_l [15];
-    double  offset_r [15];
+    double  offset_l [16];
+    double  offset_r [16];
     double *thresh_delta;
 
     //open tfile
@@ -55,8 +55,8 @@ void generate_tree () {
 
     tree->Branch("delta_thresh", &result.thresh_delta, "thresh_delta/D");
 
-    tree->Branch("offset_l", result.offset_l,  "offset_l[15]/D");
-    tree->Branch("offset_r", result.offset_r,  "offset_r[15]/D");
+    tree->Branch("offset_l", result.offset_l,  "offset_l[16]/D");
+    tree->Branch("offset_r", result.offset_r,  "offset_r[16]/D");
 
     std::string dirname= "../log/raw/";
     TSystemDirectory dir(dirname.c_str(), dirname.c_str());

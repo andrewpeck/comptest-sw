@@ -57,6 +57,8 @@ int main (int argc, char** argv)
 static void initializeLCT()
 {
     cdac.write(CDAC_VALUE);
+    comp.writeBxDelay(BX_DELAY);
+    comp.writePulseWidth(PULSE_WIDTH);
 
     comp.writePeakMode(PKMODE);    // what should this be?
     comp.writePeakTime(PKTIME);    // what should this be?
@@ -66,39 +68,35 @@ static void initializeLCT()
 
 static struct TestResult_t scanChip ()
 {
-    struct TestResult_t result;
-    result.currents = comp.readComparatorCurrents();
+    auto result = testAllStrips();
+    result.currents= comp.readComparatorCurrents();
+    return result;
+}
+
+static struct TestResult_t testAllStrips()
+{
+    TestResult_t result;
 
     double thresh_max = std::numeric_limits<double>::min();
     double thresh_min = std::numeric_limits<double>::max();
-    double thresh;
 
     for (int strip=0; strip<16; strip++) {
-        thresh = scanThreshold(strip, LEFT);
-        thresh_min = (thresh < thresh_min) ? thresh : thresh_min;
-        thresh_max = (thresh > thresh_max) ? thresh : thresh_max;
-        result.thresh_l[strip] = thresh;
+        auto data = testStrip(strip, LEFT);
+        thresh_min = (data.thresh < thresh_min) ? data.thresh : thresh_min;
+        thresh_max = (data.thresh > thresh_max) ? data.thresh : thresh_max;
+        result.thresh_l[strip] = data.thresh;
+        result.offset_l [strip] = offset(data.offset);
     }
 
     for (int strip=0; strip<16; strip++) {
-        thresh = scanThreshold(strip, RIGHT);
-        result.thresh_r[strip] = thresh;
-        thresh_min = (thresh < thresh_min) ? thresh : thresh_min;
-        thresh_max = (thresh > thresh_max) ? thresh : thresh_max;
+        auto data = testStrip(strip, RIGHT);
+        result.thresh_r[strip] = data.thresh;
+        thresh_min = (data.thresh < thresh_min) ? data.thresh : thresh_min;
+        thresh_max = (data.thresh > thresh_max) ? data.thresh : thresh_max;
+        result.offset_r [strip] = offset(data.offset);
     }
 
     result.thresh_delta = thresh_max - thresh_min;
-
-    for (int strip=0; strip<15; strip++) {
-        result.offset_l [strip] = offset(result.thresh_l[strip]);
-    }
-
-    for (int strip=0; strip<15; strip++) {
-        result.offset_r [strip] = offset(result.thresh_r[strip]);
-    }
-
-    result.currents= comp.readComparatorCurrents();
-
     return result;
 }
 
@@ -110,23 +108,6 @@ static double offset (double threshold) {
     return offset;
 }
 
-static std::string now()
-{
-    /* Logging */
-    char datestr [80];
-    time_t now = time(NULL);
-    struct tm *t = localtime(&now);
-    strftime(datestr, sizeof(datestr)-1, "%Y%m%d-%H%M%S", t);
-
-    timeval curTime;
-    gettimeofday(&curTime, NULL);
-    int millis = curTime.tv_usec / 1000;
-
-    sprintf(datestr, "%s%03i", datestr, millis);
-
-    std::string filename = datestr;
-    return filename;
-}
 
 static std::string isPassed (bool pass)
 {
@@ -147,14 +128,11 @@ static void writeLogFile (std::string filename, struct TestResult_t result)
 
 static struct TestResult_t checkResult (struct TestResult_t result)
 {
-
     struct TestResult_t passed;
 
     for (int i=0; i<15; i++) {
         passed.thresh_l [i] = (REF_THRESH_LOW < result.thresh_l [i]) && (result.thresh_l [i] < REF_THRESH_HIGH) ? 1 : 0;
         passed.thresh_r [i] = (REF_THRESH_LOW < result.thresh_r [i]) && (result.thresh_r [i] < REF_THRESH_HIGH) ? 1 : 0;
-    }
-    for (int i=0; i<14; i++) {
         passed.offset_l [i] = (REF_OFFSET_LOW < result.offset_l [i]) && (result.offset_l [i] < REF_OFFSET_HIGH) ? 1 : 0;
         passed.offset_r [i] = (REF_OFFSET_LOW < result.offset_r [i]) && (result.offset_r [i] < REF_OFFSET_HIGH) ? 1 : 0;
     }
@@ -181,8 +159,6 @@ static int countErrors (struct TestResult_t checkedResult)
             errors += 1;
         if (!checkedResult.thresh_r [i])
             errors += 1;
-    }
-    for (int i=0; i<14; i++) {
         if (!checkedResult.offset_l [i])
             errors += 1;
         if (!checkedResult.offset_r [i])
@@ -191,7 +167,6 @@ static int countErrors (struct TestResult_t checkedResult)
 
     if (!checkedResult.thresh_delta )
         errors += 1;
-
     if (!checkedResult.currents.ibias )
         errors += 1;
     if (!checkedResult.currents.iamp  )
@@ -251,7 +226,7 @@ static void writeAsciiLogFile (std::string filename, struct TestResult_t result)
     fclose (log);
 }
 
-static double scanThreshold(int strip, int side)
+static struct ScanResult_t testStrip(int strip, int side)
 {
     /* Sanitizer */
     if (side!=LEFT && side!=RIGHT)
@@ -259,7 +234,6 @@ static double scanThreshold(int strip, int side)
 
     if (strip<0 && strip>15)
         throw std::runtime_error ("Invalid Strip");
-
 
     comp.writeLCTReset(1);
 
@@ -279,34 +253,67 @@ static double scanThreshold(int strip, int side)
     pat.compout = mux.configToCompoutExpect(muxconfig);
     comp.writePatternExpect(pat);
 
-    /* Should inject the inputs when pulsing strip 0 */
-    /* TODO: I don't understand this... */
-    if (strip==0)
-        comp.writeCompinInject(1);
+    comp.writeCompinInject(0);
+
+    ScanResult_t result;
+    result.thresh = ~0;
+    result.offset = ~0;
+    int threshold_found = 0;
+    int offset_found = 0;
+
+    int errors;
 
     for (int dac_value=PDAC_MIN; dac_value<PDAC_MAX; dac_value+=SCAN_GRANULARITY) {
         pdac.write(dac_value);
+        usleep(10);
 
         comp.writeLCTReset(0);
 
-        usleep(1);
-
         comp.resetHalfstripsErrcnt();
         comp.resetCompoutErrcnt();
+        comp.resetThresholdsErrcnt();
 
         for (int ipulse=0; ipulse < NUM_PULSES; ipulse++) {
             while (!comp.isPulserReady());
             comp.firePulse();
         }
-        int errors = comp.readHalfstripsErrcnt();
-        errors    += comp.readCompoutErrcnt();
+
+        errors = comp.readThresholdsErrcnt();
+        if ((double(errors) / NUM_PULSES) < PASS_THRESHOLD) {
+            result.thresh = (1000*pdac.voltage(dac_value)*PULSEAMP_SCALE_FACTOR*ATTENUATION_LOW);
+            threshold_found = 1;
+        }
+
+        errors  = comp.readHalfstripsErrcnt();
+        errors += comp.readCompoutErrcnt();
 
         if ((double(errors) / NUM_PULSES) < PASS_THRESHOLD) {
             /* we want millivolts */
-            return (1000*pdac.voltage(dac_value)*PULSEAMP_SCALE_FACTOR*ATTENUATION_LOW);
+            result.offset = (1000*pdac.voltage(dac_value)*PULSEAMP_SCALE_FACTOR*ATTENUATION_LOW);
+            offset_found = 1;
         }
+
+        if (threshold_found && offset_found)
+            return (result);
     }
 
     printf("No Threshold Found\n");
-    return ~0;
+    return result;
+}
+static std::string now()
+{
+    /* Logging */
+    char datestr [80];
+    time_t now = time(NULL);
+    struct tm *t = localtime(&now);
+    strftime(datestr, sizeof(datestr)-1, "%Y%m%d-%H%M%S", t);
+
+    timeval curTime;
+    gettimeofday(&curTime, NULL);
+    int millis = curTime.tv_usec / 1000;
+
+    sprintf(datestr, "%s%03i", datestr, millis);
+
+    std::string filename = datestr;
+    return filename;
 }

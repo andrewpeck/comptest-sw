@@ -23,6 +23,7 @@ class Emulator
         static uint32_t REG_HALFSTRIPS        ;
         static uint32_t REG_HALFSTRIPS_EXPECT ;
         static uint32_t REG_HALFSTRIPS_ERRCNT ;
+        static uint32_t REG_THRESHOLDS_ERRCNT ;
         static uint32_t REG_COMPOUT_ERRCNT    ;
         static uint32_t REG_ADC               ;
         static uint32_t REG_DDD               ;
