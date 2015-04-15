@@ -273,19 +273,9 @@ namespace ComparatorTest {
         fclose (log);
     }
 
-    struct ScanResult_t testStrip(int strip, int side)
+    void configurePulser (int strip, int side)
     {
-        /* Sanitizer */
-        if (side!=LEFT && side!=RIGHT)
-            throw std::runtime_error ("Invalid Halfstrip");
-
-        if (strip<0 && strip>15)
-            throw std::runtime_error ("Invalid Strip");
-
-        Comparator::writeLCTReset(1);
-
-        /* Configure Muxes and Write Pattern Expect */
-        Mux::MuxConfig_t muxconfig;
+        struct Mux::MuxConfig_t muxconfig;
         Mux::configAllChannelsOff(muxconfig);
 
         if (side==LEFT)
@@ -303,8 +293,23 @@ namespace ComparatorTest {
         Comparator::writePatternExpect(pat);
         Comparator::writeActiveStripMask(0x1 << (strip));
 
-        Comparator::writeCompinInject(0);
+    }
 
+    struct ScanResult_t testStrip(int strip, int side)
+    {
+        /* Sanitizer */
+        if (side!=LEFT && side!=RIGHT)
+            throw std::runtime_error ("Invalid Halfstrip");
+
+        if (strip<0 && strip>15)
+            throw std::runtime_error ("Invalid Strip");
+
+        Comparator::writeLCTReset(1);
+
+        /* Configure Muxes and Write Pattern Expect */
+        configurePulser (strip, side);
+
+        Comparator::writeCompinInject(0);
         ScanResult_t result;
         result.thresh = ~0;
         result.offset = ~0;
@@ -318,10 +323,7 @@ namespace ComparatorTest {
             usleep(10);
 
             Comparator::writeLCTReset(0);
-
-            Comparator::resetHalfstripsErrcnt();
-            Comparator::resetCompoutErrcnt();
-            Comparator::resetThresholdsErrcnt();
+            Comparator::resetCounters();
 
             for (int ipulse=0; ipulse < NUM_PULSES; ipulse++) {
                 while (!Comparator::isPulserReady());
