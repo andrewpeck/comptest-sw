@@ -108,7 +108,7 @@ namespace Comparator {
 
     void writePulseWidth (int width)
     {
-        uint8_t adr = ADR_COMP_CONFIG;
+        uint8_t adr = ADR_PULSE_CTRL;
         width &= 0xF; // max 4 bits
         uint32_t pulsewidth_mask = ~(0xF << 1);
         uint32_t status = Serial::read(adr);
@@ -119,8 +119,9 @@ namespace Comparator {
 
     void writeBxDelay (int delay)
     {
-        uint8_t adr = ADR_COMP_CONFIG;
+        uint8_t adr = ADR_PULSE_CTRL;
         delay &= 0x7; // max 3 bits
+        delay <<= 11;
         uint32_t bxdelay_mask = ~(0x7 << 11);
         uint32_t status = Serial::read(adr);
         status &= bxdelay_mask;
@@ -130,7 +131,7 @@ namespace Comparator {
 
     void writeTriadPersist(int persist, bool persist1)
     {
-        uint8_t adr = ADR_COMP_CONFIG;
+        uint8_t adr = ADR_PULSE_CTRL;
         persist  &= 0x7;  //max 3 bits
         persist1 &= 0x1;  //max 1 bits
         uint32_t persist_mask =  ~(0x7 << 15);
