@@ -1,5 +1,7 @@
 #include "registers.hpp"
 #include "emulator.hpp"
+#include <cassert>
+#include <cstring>
 #include <ctime>
 
 #include <random>
@@ -16,6 +18,7 @@ namespace Emulator {
     static int cdac_ibit = 0;
     static int pdac_ibit = 0;
 
+    static int ddd_delay=0;
 
     static uint16_t cdac_word;
     static uint16_t pdac_word;
@@ -87,7 +90,6 @@ namespace Emulator {
                 }
             case ADR_ADC:
                 {
-                    //printf("c. REG_ADC: %08X\n", REG_ADC);
                     return REG_ADC;
                     break;
                 }
@@ -156,7 +158,6 @@ namespace Emulator {
 
             case ADR_ADC:
                 {
-                    //printf("a. REG_ADC: %08X\n", REG_ADC);
                     REG_ADC = write_data;
 
                     int cs   = 0x1 & REG_ADC >> 0;
@@ -166,10 +167,8 @@ namespace Emulator {
                     if (sclk && !cs)
                     {
                         int miso = adc(mosi, sclk, cs);
-                        //printf("miso: %i\n", miso);
                         REG_ADC &= ~(0x1 << 3);
                         REG_ADC |=  (0x1 & miso) << 3;
-                        //printf("b. REG_ADC: %08X\n", REG_ADC);
                     }
 
                     break;
@@ -179,14 +178,15 @@ namespace Emulator {
             case ADR_HALFSTRIPS_EXPECT:
                 {
                     REG_HALFSTRIPS_EXPECT = write_data;
+                    break;
                 }
 
             case ADR_DDD:
                 {
                     REG_DDD = write_data;
-                    int latch = 0x1 & REG_DDD >> 0;
-                    int mosi  = 0x1 & REG_DDD >> 1;
-                    int sclk  = 0x1 & REG_DDD >> 2;
+                    int latch = 0x1 & (REG_DDD >> 0);
+                    int mosi  = 0x1 & (REG_DDD >> 1);
+                    int sclk  = 0x1 & (REG_DDD >> 2);
                     ddd ( mosi, sclk, latch);
                     break;
                 }
@@ -278,8 +278,36 @@ namespace Emulator {
         return miso;
     }
 
+    static bool ddd_enable[4];
+    static uint16_t ddd_data[4];
+    static int ddd_ibit  = 0;
+
     void ddd (int mosi, int sclk, int latch)
     {
+        if (sclk) {
+            //printf("%i", mosi);
+            for (int i=0; i<4; i++) {
+                if (ddd_ibit==i) {
+                    ddd_enable[3-i] = mosi;
+                }
+                else {
+                    int lower_bound = (i+1)*4;
+                    int upper_bound = lower_bound+3;
 
+                    if (ddd_ibit>=lower_bound && ddd_ibit <= upper_bound) {
+                        ddd_data[i] |= mosi << (3-(ddd_ibit-lower_bound));
+                        //printf("    ddd_data[%i] %i", i, ddd_data[i]);
+                    }
+                }
+            }
+            ddd_ibit += 1;
+        }
+
+        if (latch==0) {
+            ddd_delay = 2*(ddd_data[0]+ddd_data[1]+ddd_data[2]+ddd_data[3]);
+            //printf("%i\n", ddd_delay);
+            ddd_ibit=0;
+            memset (ddd_data, 0, sizeof(ddd_data));
+        }
     }
 }

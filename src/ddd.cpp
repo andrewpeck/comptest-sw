@@ -13,14 +13,15 @@ namespace DDD {
         if (delay > 120)
             throw std::runtime_error ("DDD Delay Set too Large");
 
+
         /* ddd chip steps in units of 2ns */
         delay = delay / 2;
 
         struct ddd_config dddconf;
-        dddconf.ch1enable = true;
-        dddconf.ch2enable = true;
-        dddconf.ch3enable = true;
-        dddconf.ch4enable = true;
+        dddconf.ch1enable = 1;
+        dddconf.ch2enable = 1;
+        dddconf.ch3enable = 1;
+        dddconf.ch4enable = 1;
 
         if (delay < 16) {
             dddconf.ch1delay  = delay;
@@ -30,21 +31,21 @@ namespace DDD {
         }
         else if (delay < 32) {
             dddconf.ch1delay  = 0xF;
-            dddconf.ch2delay  = delay-1*0xF;
+            dddconf.ch2delay  = delay-(1*0xF);
             dddconf.ch3delay  = 0;
             dddconf.ch4delay  = 0;
         }
         else if (delay < 48) {
             dddconf.ch1delay  = 0xF;
             dddconf.ch2delay  = 0xF;
-            dddconf.ch3delay  = delay-2*0xF;
+            dddconf.ch3delay  = delay-(2*0xF);
             dddconf.ch4delay  = 0;
         }
         else if (delay < 64) {
             dddconf.ch1delay  = 0xF;
             dddconf.ch2delay  = 0xF;
             dddconf.ch3delay  = 0xF;
-            dddconf.ch4delay  = delay-3*0xF;
+            dddconf.ch4delay  = delay-(3*0xF);
         }
 
         setDelay (dddconf);
@@ -54,15 +55,22 @@ namespace DDD {
     {
         int adr = ADR_DDD;
 
+        //printf("ddd1delay: %i\n", config.ch1delay);
+        //printf("ddd2delay: %i\n", config.ch2delay);
+        //printf("ddd3delay: %i\n", config.ch3delay);
+        //printf("ddd4delay: %i\n", config.ch4delay);
         uint32_t data = 0;
-        data |= 0x1 & config.ch4enable << 0;
-        data |= 0x1 & config.ch3enable << 1;
-        data |= 0x1 & config.ch2enable << 2;
-        data |= 0x1 & config.ch1enable << 3;
-        data |= 0xF & config.ch1delay  << 4;
-        data |= 0xF & config.ch2delay  << 8;
-        data |= 0xF & config.ch3delay  << 12;
-        data |= 0xF & config.ch4delay  << 16;
+
+        data |= (0x1 & config.ch4enable) << 19;
+        data |= (0x1 & config.ch3enable) << 18;
+        data |= (0x1 & config.ch2enable) << 17;
+        data |= (0x1 & config.ch1enable) << 16;
+        data |= (0xF & config.ch1delay ) << 12;
+        data |= (0xF & config.ch2delay ) << 8;
+        data |= (0xF & config.ch3delay ) << 4;
+        data |= (0xF & config.ch4delay ) << 0;
+
+        //printf("%05X\n", data);
 
         uint32_t status = Serial::read (adr);
         status &= ~sclk;    // CLK Low
@@ -70,19 +78,24 @@ namespace DDD {
         status |=  latch;   // CS High
         Serial::write(adr, status);
 
-        for (int iclk=0; iclk<20; iclk++)
-        {
+        for (int iclk=0; iclk<20; iclk++) {
+            status = Serial::read (adr);
             status &= ~sclk;    // CLK Low
             Serial::write(adr, status);
 
-
             status &= ~mosi;
-            status |=  (data >> (20-iclk)) ? mosi : 0; // Data
+            int databit =  (0x1 & (data >> (19-iclk))) ? mosi : 0; // Data
+            //printf("\n%i",  0x1 & (data >> (19-iclk)));
+
+            status |= databit;
             Serial::write(adr, status);
 
-            status |= sclk;    // CLK Low
+            status |= sclk;    // CLK High
             Serial::write(adr, status);
         }
+
+        status &= ~sclk;    // CLK Low
+        Serial::write(adr, status);
 
         status &= ~latch;   // Latch Low
         Serial::write(adr, status);
