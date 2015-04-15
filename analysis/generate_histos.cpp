@@ -185,31 +185,22 @@ void generate_histos ()
     TCanvas *currents = new TCanvas("currents", "LCT Comparator Current Distributions", 1280,1024);
     currents->Divide(3,2);
 
-    currents->cd(1);
-    draw_plot(ibias, currents, results, low, high);
-    currents->cd(2);
-    draw_plot(iamp, currents, results, low, high);
-    currents->cd(3);
-    draw_plot(ifamp, currents, results, low, high);
-    currents->cd(4);
-    draw_plot(ioff, currents, results, low, high);
-    currents->cd(5);
-    draw_plot(i3v3, currents, results, low, high);
-    currents->cd(6);
-    draw_plot(i5v0, currents, results, low, high);
+
+    struct PlotParams_t currentPlots [6] = {ibias, iamp, ifamp, ioff, i3v3, i5v0};
+    for (int i=0; i<6; i++) {
+        currents->cd(i+1);
+        draw_plot(currentPlots[i], currents, results, low, high);
+    }
 
     /* Thresholds and Offsets */
     TCanvas *threshoff = new TCanvas("thresholds", "LCT Comparator Thresholds and Offsets Distributions", 1024,768);
     threshoff->Divide(2,2);
 
-    threshoff->cd(1);
-    draw_plot(thresh_l, threshoff, results, low, high);
-    threshoff->cd(2);
-    draw_plot(thresh_r, threshoff, results, low, high);
-    threshoff->cd(3);
-    draw_plot(offset_l, threshoff, results, low, high);
-    threshoff->cd(4);
-    draw_plot(offset_r, threshoff, results, low, high);
+    struct PlotParams_t thresholdsPlots [4] = {thresh_l, thresh_r, offset_l, offset_r};
+    for (int i=0; i<5; i++) {
+        threshoff->cd(i+1);
+        draw_plot(thresholdsPlots[i], threshoff, results, low, high);
+    }
 
     /* Threshold Delta Spread */
 
