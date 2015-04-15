@@ -23,6 +23,7 @@ namespace Comparator {
     int readThresholdsErrcnt();
     int readCompoutErrcnt();
 
+    void resetCounters();
     void resetHalfstripsErrcnt();
     void resetCompoutErrcnt();
     void resetThresholdsErrcnt();

@@ -27,6 +27,7 @@ static const Comparator::PKtime_t   PKTIME = Comparator::PKTIME150;
 
 /*
  * TODO: figure out what the hell to do with COMPIN
+ * TODO: output when no threshold found is screwed
  */
 
 
@@ -34,31 +35,81 @@ static const Comparator::PKtime_t   PKTIME = Comparator::PKTIME150;
 static CDAC       cdac;
 static PDAC       pdac;
 
+namespace Menus {
+    void mainMenu();
+}
+
 int main (int argc, char** argv)
 {
-    Serial::open();
-    ADC::init();
+    if (argc==1) {
+        Serial::open();
+        ADC::init();
 
-    using namespace ComparatorTest;
+        using namespace ComparatorTest;
 
-    DDD::setDelay(DDD_DELAY);
-    initializeLCT();
-    struct TestResult_t result = scanChip();
+        DDD::setDelay(DDD_DELAY);
 
-    std::string filename = now();         // returns current date+time as string
-    writeLogFile (filename, result);      // Saves binary record of the raw test result
-    writeAsciiLogFile (filename, result); // Writes ASCII Log File
-    writeAsciiLogFile ("stdout", result); // Writes ASCII Log File
-    Serial::close();
+        Comparator::writeBxDelay(BX_DELAY);
+        Comparator::writePulseWidth(PULSE_WIDTH);
+
+        initializeLCT();
+        struct TestResult_t result = scanChip();
+
+        std::string filename = now();         // returns current date+time as string
+        writeLogFile (filename, result);      // Saves binary record of the raw test result
+        writeAsciiLogFile (filename, result); // Writes ASCII Log File
+        writeAsciiLogFile ("stdout", result); // Writes ASCII Log File
+        Serial::close();
+    }
+    else {
+        Menus::mainMenu();
+    }
 }
 
 namespace ComparatorTest {
 
+    void timingScan()
+    {
+        initializeLCT();
+        int errorSpots [16][120];
+        pdac.write(PDAC_MAX);
+
+        for (int bx_delay=0; bx_delay<16; bx_delay++) {
+            Comparator::writeBxDelay(bx_delay);
+            for (int ddd_delay=0; ddd_delay<120; ddd_delay++) {
+                DDD::setDelay(ddd_delay);
+                Comparator::resetHalfstripsErrcnt();
+
+                for (int ipulse=0; ipulse < 100; ipulse++) {
+                    while (!Comparator::isPulserReady());
+                    Comparator::firePulse();
+                }
+
+                errorSpots [bx_delay][ddd_delay] = Comparator::readHalfstripsErrcnt();
+            }
+        }
+
+        char yaxis[17] = "    BX DELAY    ";
+        char header[] = "     1        10        20        30        40        50        60        70        80        90        100       110       120\n";
+
+        printf("                                                Pulse Injection (DDD) Delay \n");
+        printf("%s", header);
+        for (int bx_delay=0; bx_delay<16; bx_delay++) {
+            printf("%c %02i ", yaxis[bx_delay], bx_delay);
+            for (int ddd_delay=0; ddd_delay<120; ddd_delay++) {
+                if (errorSpots[bx_delay][ddd_delay])
+                    printf("X");
+                else
+                    printf(" ");
+            }
+            printf("\n");
+        }
+    }
+
+
     void initializeLCT()
     {
         cdac.write(CDAC_VALUE);
-        Comparator::writeBxDelay(BX_DELAY);
-        Comparator::writePulseWidth(PULSE_WIDTH);
 
         Comparator::writePeakMode(PKMODE);    // what should this be?
         Comparator::writePeakTime(PKTIME);    // what should this be?
@@ -102,12 +153,11 @@ namespace ComparatorTest {
 
     double offset (double threshold) {
         double secondary_amplitude = threshold * PULSEAMP_SCALE_FACTOR * ATTENUATION_MID;
-        double tertiary_amplitude = threshold * PULSEAMP_SCALE_FACTOR  * ATTENUATION_HIGH;
+        double tertiary_amplitude  = threshold * PULSEAMP_SCALE_FACTOR * ATTENUATION_HIGH;
 
         double offset=tertiary_amplitude-secondary_amplitude;
         return offset;
     }
-
 
     std::string isPassed (bool pass)
     {
@@ -145,7 +195,6 @@ namespace ComparatorTest {
         passed.currents.ioff    = (REF_IOFF_LOW  < result.currents.ioff  ) &&  (result.currents.ioff  < REF_IOFF_HIGH)  ? 1 : 0;
         passed.currents.i3v3    = (REF_I3V3_LOW  < result.currents.i3v3  ) &&  (result.currents.i3v3  < REF_I3V3_HIGH)  ? 1 : 0;
         passed.currents.i5v0    = (REF_I5V0_LOW  < result.currents.i5v0  ) &&  (result.currents.i5v0  < REF_I5V0_HIGH)  ? 1 : 0;
-
 
         return (passed);
     }
@@ -301,6 +350,7 @@ namespace ComparatorTest {
         printf("No Threshold Found\n");
         return result;
     }
+
     std::string now()
     {
         /* Logging */

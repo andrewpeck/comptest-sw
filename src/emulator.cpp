@@ -18,6 +18,7 @@ namespace Emulator {
     static int cdac_ibit = 0;
     static int pdac_ibit = 0;
 
+    static int bx_delay;
     static int ddd_delay=0;
 
     static uint16_t cdac_word;
@@ -65,10 +66,20 @@ namespace Emulator {
                 {
                     std::normal_distribution<double> distribution(0.0,15.0);
 
-                    if ((distribution(generator)+pdac_value) > (cdac_value))
+                    static const int shaping_time = 100;
+
+                    //printf("bxdelay*25    %i\n", bx_delay*25);
+                    //printf("ddd_delay     %i\n", ddd_delay);
+                    //printf("shaping time  %i\n", shaping_time);
+                    bool isValid = (distribution(generator)+pdac_value) > (cdac_value);
+                    isValid &= (bx_delay*25) < (ddd_delay + shaping_time + 10);
+                    isValid &= (bx_delay*25) > (ddd_delay + shaping_time - 10);
+
+                    if (isValid)
                         REG_HALFSTRIPS_ERRCNT = 0;
                     else
                         REG_HALFSTRIPS_ERRCNT = 1000 + (5-distribution(generator));
+
                     return REG_HALFSTRIPS_ERRCNT;
                     break;
                 }
@@ -136,6 +147,16 @@ namespace Emulator {
                     int pulsedac_en = 0x1 & (write_data >> 5);
                     int pulsedac_din = 0x1 & (write_data >> 6);
                     int pulsedac_sclk = 0x1 & (write_data >> 7);
+
+                    bx_delay  = (0x1 & (write_data >>11)) << 0;
+                    bx_delay |= (0x1 & (write_data >>12)) << 1;
+                    bx_delay |= (0x1 & (write_data >>13)) << 2;
+
+                    //printf("%i", (0x1 & (write_data >>11)) << 0);
+                    //printf("%i", (0x1 & (write_data >>12)) << 1);
+                    //printf("%i\n", (0x1 & (write_data >>13)) << 2);
+
+                    //printf("bxdelay*25    %i\n", bx_delay*25);
 
                     if (!pulsedac_en && pulsedac_sclk) {
                         dac (1, pulsedac_din, pulsedac_sclk);

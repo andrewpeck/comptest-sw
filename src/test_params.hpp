@@ -20,10 +20,10 @@ static const int   PDAC_MAX         = 200;
 static const int   SCAN_GRANULARITY = 2;
 
 /* Comparator Injection Delay */
-static const int   DDD_DELAY        = 0;
+static const int   DDD_DELAY        = 50;
 
 /* FPGA Integer BX Delay */
-static const int BX_DELAY = 3;
+static const int BX_DELAY = 6;
 
 /* Integer Pulse Width */
 static const int PULSE_WIDTH = 1;

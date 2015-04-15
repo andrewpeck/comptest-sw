@@ -21,6 +21,7 @@ namespace ComparatorTest {
     };
 
     double offset (double threshold);
+    void timingScan();
     struct TestResult_t scanChip ();
     struct TestResult_t testAllStrips();
     struct ScanResult_t testStrip(int strip, int side);
