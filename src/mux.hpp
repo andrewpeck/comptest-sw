@@ -16,6 +16,8 @@ namespace Mux {
     void configStripRH (int strip, struct MuxConfig_t &config);
     void configAllChannelsOff(struct MuxConfig_t &config);
 
+    void writeHalfstripConfig (int strip, int side);
+
     uint32_t configToHalfstripMap (MuxConfig_t config);
     uint32_t configToCompoutExpect (MuxConfig_t config);
 

@@ -86,27 +86,11 @@ namespace Mux {
         return halfstrips;
     }
 
-    uint32_t configToCompoutExpect (MuxConfig_t config)
-    {
-        //TODO: fill in this code
-        return (1);
-    }
-
     void writeHalfstripsExpect (uint32_t halfstrips)
     {
         uint8_t adr = ADR_MUX1;
         uint32_t status = halfstrips;
         Serial::write (adr, status);
-    }
-
-    void writeCompoutExpect (int compout_expect)
-    {
-        uint8_t adr = ADR_PULSE_CTRL;
-        uint32_t status = Serial::read(adr);
-        status &= ~(0x1 << 14);
-        if (compout_expect)
-            status |= 0x1 << 14;
-        Serial::write(adr, status);
     }
 
     void configStripLH (int strip, struct MuxConfig_t &config)
@@ -123,6 +107,11 @@ namespace Mux {
             config.next=LOW;
     }
 
+    uint32_t configToCompoutExpect (MuxConfig_t config)
+    {
+        //TODO: fill in this code
+        return (1);
+    }
 
     void configStripRH (int strip, struct MuxConfig_t &config)
     {
