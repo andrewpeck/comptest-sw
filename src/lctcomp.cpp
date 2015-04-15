@@ -49,6 +49,13 @@ namespace Comparator {
         return errcnt;
     }
 
+    void resetCounters()
+    {
+        void resetHalfstripsErrcnt();
+        void resetCompoutErrcnt();
+        void resetThresholdsErrcnt();
+    }
+
     void resetHalfstripsErrcnt()
     {
         uint8_t adr = ADR_PULSE_CTRL;
@@ -141,9 +148,11 @@ namespace Comparator {
 
     void writePatternExpect (struct LCTpattern_t expect)
     {
+        /* Halfstrips Expect*/
         uint8_t adr = ADR_HALFSTRIPS_EXPECT;
         Serial::write(adr, expect.halfstrips);
 
+        /* Compout Expect */
         adr = ADR_PULSE_CTRL;
         uint32_t status = Serial::read(adr);
         status &= ~(0x1 << 14);
