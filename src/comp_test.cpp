@@ -66,7 +66,80 @@ int main (int argc, char** argv)
     }
 }
 
-namespace ComparatorTest {
+namespace ComparatorTest
+{
+    struct ScanResult_t testStrip(int strip, int side)
+    {
+        /* Sanitizer */
+        if (side!=LEFT && side!=RIGHT)
+            throw std::runtime_error ("Invalid Halfstrip");
+
+        if (strip<0 && strip>15)
+            throw std::runtime_error ("Invalid Strip");
+
+
+        /* Configure Muxes and Write Pattern Expect */
+        configurePulser (strip, side);
+
+        Comparator::writeCompinInject(0);
+        ScanResult_t result;
+        result.thresh = ~0;
+        result.offset = ~0;
+
+
+        Comparator::writeLCTReset(1);
+        Comparator::writeLCTReset(0);
+
+        /* Thresholds */
+        cdac.write(CDAC_VALUE);
+        usleep(100);
+        for (int dac_value=1; dac_value<PDAC_MAX; dac_value+=SCAN_GRANULARITY) {
+
+            pdac.write(dac_value);
+            usleep(10);
+
+            Comparator::resetCounters();
+
+            for (int ipulse=0; ipulse < NUM_PULSES; ipulse++) {
+                while (!Comparator::isPulserReady());
+                Comparator::firePulse();
+            }
+
+            int errors = Comparator::readThresholdsErrcnt();
+            if ((double(errors) / NUM_PULSES) < PASS_THRESHOLD) {
+                result.thresh = (1000*pdac.voltage(dac_value)*PULSEAMP_SCALE_FACTOR*ATTENUATION_LOW);
+                break;
+            }
+        }
+
+
+        /* Offsets */
+        cdac.write(0);
+        usleep(100);
+        for (int dac_value=1; dac_value<PDAC_MAX; dac_value+=SCAN_GRANULARITY) {
+
+            pdac.write(dac_value);
+            usleep(10);
+
+            Comparator::resetCounters();
+
+            for (int ipulse=0; ipulse < NUM_PULSES; ipulse++) {
+                while (!Comparator::isPulserReady());
+                Comparator::firePulse();
+            }
+
+            int errors  = Comparator::readHalfstripsErrcnt();
+            //errors     += Comparator::readCompoutErrcnt();
+
+            if ((double(errors) / NUM_PULSES) < PASS_THRESHOLD) {
+                /* we want millivolts */
+                result.offset = offset(1000*pdac.voltage(dac_value));
+                break;
+            }
+
+        }
+        return result;
+    }
 
     void timingScan()
     {
@@ -135,7 +208,7 @@ namespace ComparatorTest {
             thresh_min = (data.thresh < thresh_min) ? data.thresh : thresh_min;
             thresh_max = (data.thresh > thresh_max) ? data.thresh : thresh_max;
             result.thresh_l[strip] = data.thresh;
-            result.offset_l [strip] = offset(data.offset);
+            result.offset_l [strip] = data.offset;
         }
 
         for (int strip=0; strip<16; strip++) {
@@ -143,7 +216,7 @@ namespace ComparatorTest {
             result.thresh_r[strip] = data.thresh;
             thresh_min = (data.thresh < thresh_min) ? data.thresh : thresh_min;
             thresh_max = (data.thresh > thresh_max) ? data.thresh : thresh_max;
-            result.offset_r [strip] = offset(data.offset);
+            result.offset_r [strip] = data.offset;
         }
 
         result.thresh_delta = thresh_max - thresh_min;
