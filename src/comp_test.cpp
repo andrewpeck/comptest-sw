@@ -22,8 +22,9 @@
 #define ANSI_BOLD          "\033[1m"
 #define ANSI_RESET         "\033[0m"
 
-static const Comparator::PKmode_t   PKMODE = Comparator::PKMODE0;
-static const Comparator::PKtime_t   PKTIME = Comparator::PKTIME150;
+/* Default DAQMB constructor sets comp_mode=2, comp_timing=1 */
+static const auto PKMODE = Comparator::PKMODE2;
+static const auto PKTIME = Comparator::PKTIME50;
 
 /*
  * TODO: figure out what the hell to do with COMPIN
