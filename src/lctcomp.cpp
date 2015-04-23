@@ -51,9 +51,9 @@ namespace Comparator {
 
     void resetCounters()
     {
-        void resetHalfstripsErrcnt();
-        void resetCompoutErrcnt();
-        void resetThresholdsErrcnt();
+        resetHalfstripsErrcnt();
+        resetCompoutErrcnt();
+        resetThresholdsErrcnt();
     }
 
     void resetHalfstripsErrcnt()
