@@ -197,7 +197,7 @@ void generate_histos ()
     threshoff->Divide(2,2);
 
     struct PlotParams_t thresholdsPlots [4] = {thresh_l, thresh_r, offset_l, offset_r};
-    for (int i=0; i<5; i++) {
+    for (int i=0; i<4; i++) {
         threshoff->cd(i+1);
         draw_plot(thresholdsPlots[i], threshoff, results, low, high);
     }
