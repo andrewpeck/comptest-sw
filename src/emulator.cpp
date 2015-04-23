@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cstring>
 #include <ctime>
+#include <cmath>
 
 #include <random>
 #include <stdexcept>
@@ -64,21 +65,18 @@ namespace Emulator {
                 break;
             case ADR_HALFSTRIPS_ERRCNT:
                 {
-                    std::normal_distribution<double> distribution(0.0,15.0);
+                    std::normal_distribution<double> distribution(0.0,4.0);
 
                     static const int shaping_time = 100;
+                    double threshold = 0.1+cdac_value+fabs(distribution(generator));
+                    bool isValid = (pdac_value) > (threshold);
 
-                    //printf("bxdelay*25    %i\n", bx_delay*25);
-                    //printf("ddd_delay     %i\n", ddd_delay);
-                    //printf("shaping time  %i\n", shaping_time);
-                    bool isValid = (distribution(generator)+pdac_value) > (cdac_value);
-                    isValid &= (bx_delay*25) < (ddd_delay + shaping_time + 10);
-                    isValid &= (bx_delay*25) > (ddd_delay + shaping_time - 10);
-
-                    if (isValid)
+                    if (isValid) {
                         REG_HALFSTRIPS_ERRCNT = 0;
-                    else
-                        REG_HALFSTRIPS_ERRCNT = 1000 + (5-distribution(generator));
+                    }
+                    else {
+                        REG_HALFSTRIPS_ERRCNT = 1000;
+                    }
 
                     return REG_HALFSTRIPS_ERRCNT;
                     break;
@@ -87,7 +85,7 @@ namespace Emulator {
                 {
                     std::normal_distribution<double> distribution(0.0,15.0);
 
-                    if ((distribution(generator)+pdac_value) > (cdac_value-20))
+                    if ((distribution(generator)+pdac_value) > (cdac_value-5))
                         REG_THRESHOLDS_ERRCNT = 0;
                     else
                         REG_THRESHOLDS_ERRCNT = 1000;
