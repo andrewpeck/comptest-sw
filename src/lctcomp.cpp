@@ -161,15 +161,18 @@ namespace Comparator {
         Serial::write(adr, status);
     }
 
-    void writeActiveStripMask (uint16_t mask)
+    void writeActiveStrip (int strip)
     {
-        uint8_t adr = ADR_COMP_CONFIG;
-        uint32_t status = Serial::read(adr);
+        uint32_t mask = 0;
+        mask |= 0x1 << (strip);
+        mask |= 0x1 << (strip+1);
+        writeActiveStripMask(mask);
+    }
 
-        status &= ~(0xFFFF << 9);
-        status |= mask & 0xFFFF;
-
-        Serial::write(adr, status);
+    void writeActiveStripMask (uint32_t mask)
+    {
+        uint8_t  adr = ADR_ACTIVE_STRIP_MASK;
+        Serial::write(adr, mask & 0xFFFF);
     }
 
     void writeLCTReset (bool state)

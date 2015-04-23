@@ -6,6 +6,7 @@
 /* Fraction of Correct Response Required to Pass */
 static const double PASS_THRESHOLD   = 0.5;
 
+
 /* Number of Pulses to Inject at Each Setting */
 static const int   NUM_PULSES       = 100;
 

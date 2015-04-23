@@ -37,7 +37,8 @@ namespace Comparator {
     void writeBxDelay (int delay);
 
     void writePatternExpect (struct LCTpattern_t expect);
-    void writeActiveStripMask (uint16_t mask);
+    void writeActiveStrip (int strip);
+    void writeActiveStripMask (uint32_t mask);
 
     struct Comparator_currents_t {
         double ibias;
@@ -55,7 +56,6 @@ namespace Comparator {
     void firePulse();
     bool isPulserReady();
     void writeCompinInject(bool state);
-
 };
 
 #endif

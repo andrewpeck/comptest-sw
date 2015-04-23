@@ -106,7 +106,6 @@ namespace ComparatorTest {
         }
     }
 
-
     void initializeLCT()
     {
         cdac.write(CDAC_VALUE);
@@ -288,69 +287,11 @@ namespace ComparatorTest {
         Comparator::LCTpattern_t pat;
 
         pat.halfstrips = Mux::configToHalfstripMap(muxconfig);
-        pat.compout = Mux::configToCompoutExpect(muxconfig);
+        pat.compout    = Mux::configToCompoutExpect(muxconfig);
 
         Comparator::writePatternExpect(pat);
-        Comparator::writeActiveStripMask(0x1 << (strip));
+        Comparator::writeActiveStrip(strip);
 
-    }
-
-    struct ScanResult_t testStrip(int strip, int side)
-    {
-        /* Sanitizer */
-        if (side!=LEFT && side!=RIGHT)
-            throw std::runtime_error ("Invalid Halfstrip");
-
-        if (strip<0 && strip>15)
-            throw std::runtime_error ("Invalid Strip");
-
-        Comparator::writeLCTReset(1);
-
-        /* Configure Muxes and Write Pattern Expect */
-        configurePulser (strip, side);
-
-        Comparator::writeCompinInject(0);
-        ScanResult_t result;
-        result.thresh = ~0;
-        result.offset = ~0;
-        int threshold_found = 0;
-        int offset_found = 0;
-
-        int errors;
-
-        for (int dac_value=PDAC_MIN; dac_value<PDAC_MAX; dac_value+=SCAN_GRANULARITY) {
-            pdac.write(dac_value);
-            usleep(10);
-
-            Comparator::writeLCTReset(0);
-            Comparator::resetCounters();
-
-            for (int ipulse=0; ipulse < NUM_PULSES; ipulse++) {
-                while (!Comparator::isPulserReady());
-                Comparator::firePulse();
-            }
-
-            errors = Comparator::readThresholdsErrcnt();
-            if ((double(errors) / NUM_PULSES) < PASS_THRESHOLD) {
-                result.thresh = (1000*pdac.voltage(dac_value)*PULSEAMP_SCALE_FACTOR*ATTENUATION_LOW);
-                threshold_found = 1;
-            }
-
-            errors  = Comparator::readHalfstripsErrcnt();
-            errors += Comparator::readCompoutErrcnt();
-
-            if ((double(errors) / NUM_PULSES) < PASS_THRESHOLD) {
-                /* we want millivolts */
-                result.offset = (1000*pdac.voltage(dac_value)*PULSEAMP_SCALE_FACTOR*ATTENUATION_LOW);
-                offset_found = 1;
-            }
-
-            if (threshold_found && offset_found)
-                return (result);
-        }
-
-        printf("No Threshold Found\n");
-        return result;
     }
 
     std::string now()
