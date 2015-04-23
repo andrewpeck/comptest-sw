@@ -7,7 +7,7 @@
 
 #include "lctcomp.hpp"
 #include "dac.hpp"
-#include "Mux.hpp"
+#include "mux.hpp"
 #include "ddd.hpp"
 #include "comp_test.hpp"
 #include "test_params.hpp"
@@ -252,7 +252,7 @@ namespace ComparatorTest
     {
         struct TestResult_t passed;
 
-        for (int i=0; i<15; i++) {
+        for (int i=0; i<16; i++) {
             passed.thresh_l [i] = (REF_THRESH_LOW < result.thresh_l [i]) && (result.thresh_l [i] < REF_THRESH_HIGH) ? 1 : 0;
             passed.thresh_r [i] = (REF_THRESH_LOW < result.thresh_r [i]) && (result.thresh_r [i] < REF_THRESH_HIGH) ? 1 : 0;
             passed.offset_l [i] = (REF_OFFSET_LOW < result.offset_l [i]) && (result.offset_l [i] < REF_OFFSET_HIGH) ? 1 : 0;
@@ -325,7 +325,7 @@ namespace ComparatorTest
         fprintf(log,"\t%s i5v0:  %5.02f mA\n", isPassed(checkedResult.currents.i5v0).c_str(),  result.currents.i5v0  );
 
         fprintf(log, ANSI_BOLD "\nThresholds:    (left>right)                    (right>left)\n" ANSI_RESET);
-        for (int i=0; i<15; i++) {
+        for (int i=0; i<16; i++) {
             fprintf(log,"\t%s Channel %02i: %05.2f mV", isPassed(checkedResult.thresh_l[i]).c_str(), i+1, result.thresh_l[i]);
             fprintf(log,"\t%s Channel %02i: %05.2f mV\n", isPassed(checkedResult.thresh_r[i]).c_str(), i+1, result.thresh_r[i]);
         }
@@ -334,7 +334,7 @@ namespace ComparatorTest
         fprintf(log,"\t%s % 06.4f mV\n", isPassed(checkedResult.thresh_delta).c_str(), result.thresh_delta);
 
         fprintf(log, ANSI_BOLD "\nOffset:        (left>right)                    (right>left)\n" ANSI_RESET);
-        for (int i=0; i<14; i++) {
+        for (int i=0; i<16; i++) {
             fprintf(log,"\t%s Channel %02i: % 07.4f mV", isPassed(checkedResult.offset_l[i]).c_str(), i+1, result.offset_l[i]);
             fprintf(log,"\t%s Channel %02i: % 07.4f mV\n", isPassed(checkedResult.offset_r[i]).c_str(), i+1, result.offset_r[i]);
         }
