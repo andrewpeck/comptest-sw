@@ -20,6 +20,8 @@ namespace ComparatorTest {
         double thresh_delta;
     };
 
+
+    void configurePulser (int strip, int side);
     double offset (double threshold);
     void timingScan();
     struct TestResult_t scanChip ();
