@@ -21,6 +21,7 @@ namespace ComparatorTest {
     };
 
 
+    void initializeTestBoard();
     void configurePulser (int strip, int side);
     double offset (double threshold);
     void timingScan();

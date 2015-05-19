@@ -51,12 +51,6 @@ int main (int argc, char** argv)
 
         using namespace ComparatorTest;
 
-        DDD::setDelay(DDD_DELAY);
-
-        Comparator::writeBxDelay(BX_DELAY);
-        Comparator::writePulseWidth(PULSE_WIDTH);
-
-        initializeLCT();
         struct TestResult_t result = scanChip();
 
         std::string filename = now();         // returns current date+time as string
@@ -66,12 +60,21 @@ int main (int argc, char** argv)
         Serial::close();
     }
     else {
+        Serial::open();
         Menus::mainMenu();
+        Serial::close();
     }
 }
 
 namespace ComparatorTest
 {
+    void initializeTestBoard() {
+        DDD::setDelay(DDD_DELAY);
+        Comparator::writeBxDelay(BX_DELAY);
+        Comparator::writePulseWidth(PULSE_WIDTH);
+        initializeLCT();
+    }
+
     struct ScanResult_t testStrip(int strip, int side)
     {
         /* Sanitizer */
@@ -97,15 +100,16 @@ namespace ComparatorTest
         /* Thresholds */
         cdac.write(CDAC_VALUE);
         usleep(100);
-        for (int dac_value=1; dac_value<PDAC_MAX; dac_value+=SCAN_GRANULARITY) {
+        for (int dac_value=1; dac_value<THRESHOLDS_PDAC_MAX; dac_value+=SCAN_GRANULARITY) {
+            printf("Thresholds DAC setting: %i\n", dac_value);
 
             pdac.write(dac_value);
             usleep(10);
 
             Comparator::resetCounters();
 
+            while (!Comparator::isPulserReady());
             for (int ipulse=0; ipulse < NUM_PULSES; ipulse++) {
-                while (!Comparator::isPulserReady());
                 Comparator::firePulse();
             }
 
@@ -120,15 +124,16 @@ namespace ComparatorTest
         /* Offsets */
         cdac.write(0);
         usleep(100);
-        for (int dac_value=1; dac_value<PDAC_MAX; dac_value+=SCAN_GRANULARITY) {
+        for (int dac_value=1; dac_value<OFFSETS_PDAC_MAX; dac_value+=SCAN_GRANULARITY) {
+            printf("Offsets DAC setting: %i\n", dac_value);
 
             pdac.write(dac_value);
             usleep(10);
 
             Comparator::resetCounters();
 
+            while (!Comparator::isPulserReady());
             for (int ipulse=0; ipulse < NUM_PULSES; ipulse++) {
-                while (!Comparator::isPulserReady());
                 Comparator::firePulse();
             }
 
@@ -149,7 +154,7 @@ namespace ComparatorTest
     {
         initializeLCT();
         int errorSpots [16][120];
-        pdac.write(PDAC_MAX);
+        pdac.write(THRESHOLDS_PDAC_MAX);
 
         for (int bx_delay=0; bx_delay<16; bx_delay++) {
             Comparator::writeBxDelay(bx_delay);
@@ -157,8 +162,8 @@ namespace ComparatorTest
                 DDD::setDelay(ddd_delay);
                 Comparator::resetHalfstripsErrcnt();
 
+                while (!Comparator::isPulserReady());
                 for (int ipulse=0; ipulse < 100; ipulse++) {
-                    while (!Comparator::isPulserReady());
                     Comparator::firePulse();
                 }
 
@@ -208,6 +213,7 @@ namespace ComparatorTest
         double thresh_min = std::numeric_limits<double>::max();
 
         for (int strip=0; strip<16; strip++) {
+            printf("Testing strip %i (left side)\n", strip);
             auto data = testStrip(strip, LEFT);
             thresh_min = (data.thresh < thresh_min) ? data.thresh : thresh_min;
             thresh_max = (data.thresh > thresh_max) ? data.thresh : thresh_max;
@@ -216,6 +222,7 @@ namespace ComparatorTest
         }
 
         for (int strip=0; strip<16; strip++) {
+            printf("Testing strip %i (right side)\n", strip);
             auto data = testStrip(strip, RIGHT);
             result.thresh_r[strip] = data.thresh;
             thresh_min = (data.thresh < thresh_min) ? data.thresh : thresh_min;
