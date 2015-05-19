@@ -20,7 +20,7 @@ namespace DDD {
             int ch4delay;
         };
 
-        void setDelay (int delay);
+        void setDelay (int ns_delay);
         void setDelay (ddd_config config);
 
 };

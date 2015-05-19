@@ -1,21 +1,20 @@
 #include "ddd.hpp"
 #include <stdexcept>
+#include "sleep.hpp"
+#include <cassert>
 
 namespace DDD {
     static const uint32_t latch = 0x1 << 0;
     static const uint32_t mosi  = 0x1 << 1;
     static const uint32_t sclk  = 0x1 << 2;
 
-    void setDelay (int delay)
+    void setDelay (int ns_delay)
     {
-        if (delay < 0)
-            throw std::runtime_error ("DDD Delay Set too Small");
-        if (delay > 120)
-            throw std::runtime_error ("DDD Delay Set too Large");
-
+        assert (ns_delay>=0);
+        assert (ns_delay<=120);
 
         /* ddd chip steps in units of 2ns */
-        delay = delay / 2;
+        int ddd_delay = ns_delay / 2;
 
         struct ddd_config dddconf;
         dddconf.ch1enable = 1;
@@ -23,29 +22,29 @@ namespace DDD {
         dddconf.ch3enable = 1;
         dddconf.ch4enable = 1;
 
-        if (delay < 16) {
-            dddconf.ch1delay  = delay;
-            dddconf.ch2delay  = 0;
-            dddconf.ch3delay  = 0;
-            dddconf.ch4delay  = 0;
+        if (ddd_delay <= 15) {
+            dddconf.ch1delay = ddd_delay;
+            dddconf.ch2delay = 0;
+            dddconf.ch3delay = 0;
+            dddconf.ch4delay = 0;
         }
-        else if (delay < 32) {
-            dddconf.ch1delay  = 0xF;
-            dddconf.ch2delay  = delay-(1*0xF);
-            dddconf.ch3delay  = 0;
-            dddconf.ch4delay  = 0;
+        else if (ddd_delay <= 30) {
+            dddconf.ch1delay = 15;
+            dddconf.ch2delay = ddd_delay-15;
+            dddconf.ch3delay = 0;
+            dddconf.ch4delay = 0;
         }
-        else if (delay < 48) {
-            dddconf.ch1delay  = 0xF;
-            dddconf.ch2delay  = 0xF;
-            dddconf.ch3delay  = delay-(2*0xF);
-            dddconf.ch4delay  = 0;
+        else if (ddd_delay <= 45) {
+            dddconf.ch1delay = 15;
+            dddconf.ch2delay = 15;
+            dddconf.ch3delay = ddd_delay-30;
+            dddconf.ch4delay = 0;
         }
-        else if (delay < 64) {
-            dddconf.ch1delay  = 0xF;
-            dddconf.ch2delay  = 0xF;
-            dddconf.ch3delay  = 0xF;
-            dddconf.ch4delay  = delay-(3*0xF);
+        else if (ddd_delay <= 60) {
+            dddconf.ch1delay = 15;
+            dddconf.ch2delay = 15;
+            dddconf.ch3delay = 15;
+            dddconf.ch4delay = ddd_delay-45;
         }
 
         setDelay (dddconf);
@@ -101,6 +100,7 @@ namespace DDD {
         Serial::write(adr, status);
 
         // need at least 10 ns here
+        usleep(1);
 
         status |=  latch;   // Latch High
         Serial::write(adr, status);
