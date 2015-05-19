@@ -15,7 +15,7 @@ namespace ADC {
     enum PinFunction     { PF_INT_BAR, PF_EOC };
     enum TriggerLevel    { TL_FULL, TL_75PC, TL_50PC, TL_25PC };
 
-    int spiWriteRead (uint16_t write_data);
+    int writeRead (uint16_t write_data);
 
     void initialize();
     void selectChannel(int channel);
@@ -23,17 +23,13 @@ namespace ADC {
     void configure();
     uint32_t codeConfig(struct ADCconfig_t config);
 
-    static const uint32_t cs        = 0x1 << 0;
-    static const uint32_t mosi      = 0x1 << 1;
-    static const uint32_t sclk      = 0x1 << 2;
-    static const uint32_t miso      = 0x1 << 3;
 
     static const int READFIFO       = 0xE << 12;
-    static const int CONFIG_DEFAULT = 0xF << 12;
+    //static const int CONFIG_DEFAULT = 0xF << 12;
     static const int REFLOW         = 0xC << 12;
     static const int REFMID         = 0xB << 12;
     static const int REFHIGH        = 0xD << 12;
-    static const int POWERDOWN      = 0x8 << 12;
+    //static const int POWERDOWN      = 0x8 << 12;
     static const int INITIALIZE     = 0xA << 12;
 
     struct ADCconfig_t {
@@ -68,40 +64,48 @@ namespace ADC {
         return voltage;
     }
 
-    int spiWriteRead (uint16_t write_data)
+    int writeRead (uint16_t write_data)
     {
+        static const uint32_t CS        = 0x1 << 0;
+        static const uint32_t MOSI      = 0x1 << 1;
+        static const uint32_t SCLK      = 0x1 << 2;
+        static const uint32_t MISO      = 0x1 << 3;
+
         uint32_t adr = ADR_ADC;
         uint32_t status = Serial::read(adr);
 
-        /* Inactive */
-        status &= ~sclk; // CLK Low
-        status &= ~mosi; // Data Low
-        status &= ~cs;   // CS Low
+        /* Active */
+        status &= ~SCLK; // CLK Low
+        status &= ~MOSI; // Data Low
+        status &= ~CS;   // CS Low
         Serial::write(adr, status);
         uint32_t read_data = 0;
 
-        int num_bits = 16;
-        for (int iclk=0; iclk<num_bits; iclk++) {
+        status |=  CS;   // CS Low
+        Serial::write(adr, status);
 
-            int data_bit =  (0x1 & (write_data >> (15-iclk))) ? (mosi) : 0;
+        for (int iclk=0; iclk<16; iclk++) {
 
-            status &= ~sclk;     // CLK Low
-            status &= ~mosi;     // Reset Data
-            status |=  data_bit; // Write Data Bit
+            int wr_bit =  (0x1 & (write_data >> (15-iclk))) ? (MOSI) : 0;
+
+            status &= ~SCLK;     // CLK Low
+            status &= ~MOSI;     // Reset Data
+            status |=  wr_bit;   // Write Data Bit
             Serial::write(adr, status);
 
-            status |= sclk;
-            Serial::write(adr, status); // Clock HIGH
+            // Clock HIGH
+            status |= SCLK;
+            Serial::write(adr, status);
 
-            data_bit = !!(Serial::read(adr) & miso) << (15-iclk);
-
-            read_data |= data_bit;
+            status = Serial::read(adr);
+            int rd_bit = ((status & MISO)>0);
+            read_data |= rd_bit << (15-iclk);
         }
 
         /* Inactive */
-        status &= ~sclk; // CLK Low
-        status &= ~mosi; // Data Low
-        status |=  cs;   // CS High
+        status &= ~SCLK; // CLK Low
+        status &= ~MOSI; // Data Low
+        status |=  CS;   // CS High
         Serial::write(adr, status);
 
         read_data  = read_data >> 2;
@@ -111,18 +115,26 @@ namespace ADC {
 
     void initialize()
     {
-        spiWriteRead(INITIALIZE);
+        writeRead(INITIALIZE);
     }
 
     void selectChannel(int channel)
     {
-        channel = channel & 0x7;
-        spiWriteRead(channel << 12);
+        if (channel < 8)
+            channel = channel & 0x7;
+        if (channel==8)
+            channel = REFHIGH;
+        if (channel==9)
+            channel = REFMID;
+        if (channel==10)
+            channel = REFLOW;
+
+        writeRead(channel << 12);
     }
 
     int readFIFO()
     {
-        int data = spiWriteRead(READFIFO);
+        int data = writeRead(READFIFO);
         return data;
     }
 
@@ -139,7 +151,7 @@ namespace ADC {
         config.pf = PF_EOC;
         config.tl = TL_50PC;
 
-        spiWriteRead(codeConfig(config));
+        writeRead(codeConfig(config));
     }
 
     uint32_t codeConfig(struct ADCconfig_t config)
