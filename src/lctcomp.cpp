@@ -1,5 +1,6 @@
 #include "lctcomp.hpp"
-#include "cstdio"
+#include <cstdio>
+#include <cassert>
 
 namespace Comparator {
     // Read pattern from comparators
@@ -22,6 +23,10 @@ namespace Comparator {
     int patternCheck (struct LCTpattern_t expect, struct
             LCTpattern_t read)
     {
+#ifdef _WIN32
+#  include <intrin.h>
+#  define __builtin_popcount __popcnt
+#endif
         uint32_t diff = expect.halfstrips ^ read.halfstrips;
         int num_errors = __builtin_popcount (diff);
 
@@ -108,6 +113,9 @@ namespace Comparator {
 
     void writePulseWidth (int width)
     {
+        assert (width>0);
+        assert (width<16);
+
         uint8_t adr = ADR_PULSE_CTRL;
         width &= 0xF; // max 4 bits
         uint32_t pulsewidth_mask = ~(0xF << 1);
@@ -191,7 +199,7 @@ namespace Comparator {
         uint32_t status = Serial::read (adr);
         status |= 0x1 << 0;
         Serial::write(adr, status);
-        status &= ~(0x1 << 8);
+        status &= ~(0x1 << 0);
         Serial::write(adr, status);
     }
 
