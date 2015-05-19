@@ -1,8 +1,10 @@
 #include "dac.hpp"
 #include <cstdio>
+#include <cassert>
 
 void DAC::write (int dac_counts)
 {
+    assert (dac_counts < 2<<13);
     /* Set Inactive */
     uint32_t status = Serial::read(adr[m_dac]);
     status &= ~clk[m_dac];
