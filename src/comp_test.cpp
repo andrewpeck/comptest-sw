@@ -1,10 +1,13 @@
 #include <string>
-#include <sys/time.h>
 #include <stdexcept>
+#include <time.h>
 #include <iostream>
 #include <fstream>
 #include <limits>
 
+#define NOMINMAX
+
+#include "sleep.hpp"
 #include "lctcomp.hpp"
 #include "dac.hpp"
 #include "mux.hpp"
@@ -368,7 +371,13 @@ namespace ComparatorTest
 
     }
 
-    std::string now()
+    #ifdef _WIN32
+    #include "timeutils.inc"
+    #else
+    #include <sys/time.h>
+    #endif
+
+	std::string now()
     {
         /* Logging */
         char datestr [80];
