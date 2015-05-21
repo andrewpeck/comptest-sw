@@ -5,8 +5,11 @@
 void DAC::write (int dac_counts)
 {
     assert (dac_counts < 2<<13);
+
     /* Set Inactive */
-    uint32_t status = Serial::read(adr[m_dac]);
+    //uint32_t status = Serial::read(adr[m_dac]);
+
+    uint32_t status = 0x0009;  // inactive state
     status &= ~clk[m_dac];
     status &= ~din[m_dac];
     status |=  en[m_dac];
@@ -32,7 +35,6 @@ void DAC::write (int dac_counts)
     }
 
     /* Set Inactive */
-    status = Serial::read(adr[m_dac]);
     status &= ~clk[m_dac]; // CLK Low
     status &= ~din[m_dac]; // Data Low
     status |=  en[m_dac];  // CS High
@@ -68,9 +70,9 @@ PDAC::PDAC () {
     setPulseDAC();
 }
 
-const uint32_t DAC::adr [] = {ADR_PULSE_CTRL, ADR_COMP_CONFIG};
-const uint32_t DAC::en  [] = {0x1 << 5,       0x1 << 6};
-const uint32_t DAC::din [] = {0x1 << 6,       0x1 << 7};
-const uint32_t DAC::clk [] = {0x1 << 7,       0x1 << 8};
+const uint32_t DAC::adr [] = {ADR_DAC,        ADR_DAC};
+const uint32_t DAC::en  [] = {0x1 << 0,       0x1 << 3};
+const uint32_t DAC::din [] = {0x1 << 1,       0x1 << 4};
+const uint32_t DAC::clk [] = {0x1 << 2,       0x1 << 5};
 
 const double DAC::VREF = 3.3f;
