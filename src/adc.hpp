@@ -5,9 +5,9 @@
 #include "serial.hpp"
 
 namespace ADC {
-    int read (int channel);
+    int    read        (int channel);
     double readVoltage (int channel);
-    void init ();
+    void   init        ();
 }
 
 #endif
