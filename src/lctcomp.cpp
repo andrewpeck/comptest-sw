@@ -56,38 +56,37 @@ namespace Comparator {
 
     void resetCounters()
     {
-        resetHalfstripsErrcnt();
-        resetCompoutErrcnt();
-        resetThresholdsErrcnt();
+        uint8_t adr = ADR_FIRE_PULSE;
+        uint32_t status = 0x7 << 1;
+        Serial::write(adr, status);
+        status = 0;
+        Serial::write(adr, status);
     }
 
     void resetHalfstripsErrcnt()
     {
-        uint8_t adr = ADR_PULSE_CTRL;
-        uint32_t status = Serial::read (adr);
-        status |= 0x1 << 8; //halfstrips_errcnt
+        uint8_t adr = ADR_FIRE_PULSE;
+        uint32_t status = 0x1 << 1; //halfstrips_errcnt
         Serial::write(adr, status);
-        status &= ~(0x1 << 8);
+        status = 0;
         Serial::write(adr, status);
     }
 
     void resetCompoutErrcnt()
     {
-        uint8_t adr = ADR_PULSE_CTRL;
-        uint32_t status = Serial::read (adr);
-        status |= 0x1 << 9; //halfstrips_errcnt
+        uint8_t adr = ADR_FIRE_PULSE;
+        uint32_t status = 0x1 << 2;
         Serial::write(adr, status);
-        status &= ~(0x1 << 9);
+        status = 0;
         Serial::write(adr, status);
     }
 
     void resetThresholdsErrcnt()
     {
-        uint8_t adr = ADR_PULSE_CTRL;
-        uint32_t status = Serial::read (adr);
-        status |= 0x1 << 23;
+        uint8_t adr = ADR_FIRE_PULSE;
+        uint32_t status = 0x1 << 3;
         Serial::write(adr, status);
-        status &= ~(0x1 << 23);
+        status = 0;
         Serial::write(adr, status);
     }
 
@@ -195,11 +194,10 @@ namespace Comparator {
 
     void firePulse()
     {
-        uint8_t adr = ADR_PULSE_CTRL;
-        uint32_t status = Serial::read (adr);
-        status |= 0x1 << 0;
+        uint8_t adr = ADR_FIRE_PULSE;
+        uint32_t status = 0x1;
         Serial::write(adr, status);
-        status &= ~(0x1 << 0);
+        status = 0x0;
         Serial::write(adr, status);
     }
 

@@ -14,6 +14,7 @@ static const uint32_t ADR_DDD               = 0x9;
 static const uint32_t ADR_COMPOUT_ERRCNT    = 0xA;
 static const uint32_t ADR_THRESHOLDS_ERRCNT = 0xB;
 static const uint32_t ADR_ACTIVE_STRIP_MASK = 0xC;
+static const uint32_t ADR_FIRE_PULSE        = 0xD;
 static const uint32_t ADR_DAC               = 0xE;
 
 static const uint8_t WRITE_CMD = 0x5;
