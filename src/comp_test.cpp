@@ -99,16 +99,17 @@ namespace ComparatorTest
 
         /* Thresholds */
         cdac.write(CDAC_VALUE);
-        usleep(100);
+        usleep(10);
         for (int dac_value=1; dac_value<THRESHOLDS_PDAC_MAX; dac_value+=SCAN_GRANULARITY) {
-            printf("Thresholds DAC setting: %i\n", dac_value);
+            printf("\tThresholds DAC setting: %i\r", dac_value);
+            fflush(stdout);
 
             pdac.write(dac_value);
             usleep(10);
 
             Comparator::resetCounters();
 
-            while (!Comparator::isPulserReady());
+            //while (!Comparator::isPulserReady());
             for (int ipulse=0; ipulse < NUM_PULSES; ipulse++) {
                 Comparator::firePulse();
             }
@@ -120,19 +121,21 @@ namespace ComparatorTest
             }
         }
 
+        printf("\n");
 
         /* Offsets */
         cdac.write(0);
-        usleep(100);
+        usleep(10);
         for (int dac_value=1; dac_value<OFFSETS_PDAC_MAX; dac_value+=SCAN_GRANULARITY) {
-            printf("Offsets DAC setting: %i\n", dac_value);
+            printf("\tOffsets DAC setting: %i\r", dac_value);
+            fflush(stdout);
 
             pdac.write(dac_value);
             usleep(10);
 
             Comparator::resetCounters();
 
-            while (!Comparator::isPulserReady());
+            //while (!Comparator::isPulserReady());
             for (int ipulse=0; ipulse < NUM_PULSES; ipulse++) {
                 Comparator::firePulse();
             }
@@ -147,6 +150,7 @@ namespace ComparatorTest
             }
 
         }
+        printf("\n");
         return result;
     }
 
@@ -162,7 +166,7 @@ namespace ComparatorTest
                 DDD::setDelay(ddd_delay);
                 Comparator::resetHalfstripsErrcnt();
 
-                while (!Comparator::isPulserReady());
+                //while (!Comparator::isPulserReady());
                 for (int ipulse=0; ipulse < 100; ipulse++) {
                     Comparator::firePulse();
                 }
