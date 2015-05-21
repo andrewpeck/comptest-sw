@@ -4,9 +4,6 @@
 #include <cassert>
 
 namespace DDD {
-    static const uint32_t latch = 0x1 << 0;
-    static const uint32_t mosi  = 0x1 << 1;
-    static const uint32_t sclk  = 0x1 << 2;
 
     void setDelay (int ns_delay)
     {
@@ -71,38 +68,41 @@ namespace DDD {
 
         //printf("%05X\n", data);
 
+        static const uint32_t LATCH = 0x1 << 0;
+        static const uint32_t MOSI  = 0x1 << 1;
+        static const uint32_t SCLK  = 0x1 << 2;
+
         uint32_t status = Serial::read (adr);
-        status &= ~sclk;    // CLK Low
-        status &= ~mosi;    // Data Low
-        status |=  latch;   // CS High
+        status &= ~SCLK;    // CLK Low
+        status &= ~MOSI;    // Data Low
+        status |=  LATCH;   // CS High
         Serial::write(adr, status);
 
         for (int iclk=0; iclk<20; iclk++) {
-            status = Serial::read (adr);
-            status &= ~sclk;    // CLK Low
+            status &= ~SCLK;    // CLK Low
             Serial::write(adr, status);
 
-            status &= ~mosi;
-            int databit =  (0x1 & (data >> (19-iclk))) ? mosi : 0; // Data
+            status &= ~MOSI;
+            int databit =  (0x1 & (data >> (19-iclk))) ? MOSI : 0; // Data
             //printf("\n%i",  0x1 & (data >> (19-iclk)));
 
             status |= databit;
             Serial::write(adr, status);
 
-            status |= sclk;    // CLK High
+            status |= SCLK;    // CLK High
             Serial::write(adr, status);
         }
 
-        status &= ~sclk;    // CLK Low
+        status &= ~SCLK;    // CLK Low
         Serial::write(adr, status);
 
-        status &= ~latch;   // Latch Low
+        status &= ~LATCH;   // Latch Low
         Serial::write(adr, status);
 
         // need at least 10 ns here
         usleep(1);
 
-        status |=  latch;   // Latch High
+        status |=  LATCH;   // Latch High
         Serial::write(adr, status);
     }
 }
