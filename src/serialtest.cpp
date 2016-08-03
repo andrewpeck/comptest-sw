@@ -1,24 +1,27 @@
 #include "serial.hpp"
+#include <time.h>
 #include <stdlib.h>
 
 namespace Serial {
     int ft_write (uint8_t *write_data, int num_bytes);
     int ft_read(uint8_t* read_data, int num_bytes);
 }
+
 int main() {
     srand(time(NULL));
     Serial::open();
     uint8_t wr_byte [1];
     uint8_t rd_byte [1];
-    for (int i=0; i<100; i++)
+    for (int i=0; i<1000; i++)
     {
         uint32_t write_data = rand() & 0xFFFFFFFF;
-        Serial::write(1, write_data);
-        uint32_t read_data  = Serial::read(1);
-        printf("write : %08X\n", write_data);
-        printf("read  : %08X\n", read_data);
-
-
+        Serial::write(0, write_data);
+        Serial::write(0, write_data);
+        uint32_t read_data  = Serial::read(0);
+        if (read_data!=write_data) {
+            printf("write : %08X\n", write_data);
+            printf("read  : %08X\n", read_data);
+        }
 
         //wr_byte[0] = 0xAA;
         //Serial::ft_write(wr_byte,1);
