@@ -10,9 +10,9 @@ SOURCES=src/adc.cpp src/comp_test.cpp src/dac.cpp src/ddd.cpp src/emulator.cpp s
 #$(wildcard $(SRCDIR)/*.cpp)
 OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
-CXXFLAGS = -std=c++11 -g -Wall -O3 -I. -Wno-unused-const-variable
+CXXFLAGS = -std=c++11 -g -Wall -O2 -I. -Wno-unused-const-variable
 #CXXFLAGS = -std=c++11 -g -Wall -O3 -I. -Demulate -Wno-unused-const-variable
-LDFLAGS  = -lftdi1
+LDFLAGS  = -L. -lftdi1
 
 TARGET = comptest
 
