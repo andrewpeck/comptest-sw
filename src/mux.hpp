@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 namespace Mux {
-    enum PulseLevel_t {HIGH, LOW, MED, OFF};
+    enum PulseLevel_t {HIGH, MED, LOW, OFF};
 
     struct MuxConfig_t {
         PulseLevel_t in[16];
@@ -12,8 +12,7 @@ namespace Mux {
         PulseLevel_t prev;
     };
 
-    void configStripLH (int strip, struct MuxConfig_t &config);
-    void configStripRH (int strip, struct MuxConfig_t &config);
+    void configStrip (int strip, int side, struct MuxConfig_t &config);
     void configAllChannelsOff(struct MuxConfig_t &config);
 
     void writeHalfstripConfig (int strip, int side);

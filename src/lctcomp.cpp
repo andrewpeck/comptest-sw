@@ -36,22 +36,24 @@ namespace Comparator {
         return num_errors;
     }
 
-    int readHalfstripsErrcnt()
+    uint32_t readHalfstrips()
     {
-        int errcnt = Serial::read(ADR_HALFSTRIPS_ERRCNT);
-        return errcnt;
+        return Serial::read(ADR_HALFSTRIPS);
     }
 
-    int readThresholdsErrcnt()
+    uint32_t readHalfstripsErrcnt()
     {
-        int errcnt = Serial::read(ADR_THRESHOLDS_ERRCNT);
-        return errcnt;
+        return Serial::read(ADR_HALFSTRIPS_ERRCNT);
     }
 
-    int readCompoutErrcnt()
+    uint32_t readThresholdsErrcnt()
     {
-        int errcnt = Serial::read(ADR_COMPOUT_ERRCNT);
-        return errcnt;
+        return Serial::read(ADR_THRESHOLDS_ERRCNT);
+    }
+
+    uint32_t readCompoutErrcnt()
+    {
+        return Serial::read(ADR_COMPOUT_ERRCNT);
     }
 
     void resetCounters()
@@ -96,7 +98,7 @@ namespace Comparator {
         uint32_t pkmode_mask = ~(0x3 << 3);
         uint32_t status = Serial::read(adr);
         status &= pkmode_mask;
-        status |= peakmode;
+        status |= peakmode << 3;
         Serial::write(adr, status);
     }
 
@@ -127,12 +129,10 @@ namespace Comparator {
     void writeBxDelay (int delay)
     {
         uint8_t adr = ADR_PULSE_CTRL;
-        delay &= 0x7; // max 3 bits
-        delay <<= 11;
-        uint32_t bxdelay_mask = ~(0x7 << 11);
+        delay &= 0x0f; // max 4 bits
         uint32_t status = Serial::read(adr);
-        status &= bxdelay_mask;
-        status |= delay;
+        status &= ~(0xf   << 11);
+        status |=  (delay << 11);
         Serial::write(adr, status);
     }
 
@@ -141,8 +141,8 @@ namespace Comparator {
         uint8_t adr = ADR_PULSE_CTRL;
         persist  &= 0x7;  //max 3 bits
         persist1 &= 0x1;  //max 1 bits
-        uint32_t persist_mask =  ~(0x7 << 15);
-        uint32_t persist1_mask = ~(0x1 << 19);
+        uint32_t persist_mask =  ~(0x7 << 16);
+        uint32_t persist1_mask = ~(0x1 << 20);
 
         uint32_t status = Serial::read(adr);
         status &= persist_mask;
@@ -163,9 +163,26 @@ namespace Comparator {
         /* Compout Expect */
         adr = ADR_PULSE_CTRL;
         uint32_t status = Serial::read(adr);
-        status &= ~(0x1 << 14);
+        status &= ~(0x1 << 15);
         status |= 0x1 & expect.compout;
         Serial::write(adr, status);
+    }
+
+    struct LCTpattern_t readPatternExpect ()
+    {
+        struct LCTpattern_t expect;
+
+        /* Halfstrips Expect*/
+        uint8_t adr = ADR_HALFSTRIPS_EXPECT;
+        expect.halfstrips = Serial::read(adr);
+
+        /* Compout Expect */
+        adr = ADR_PULSE_CTRL;
+        uint32_t status = Serial::read(adr);
+        status = 0x1 & (status >> 15);
+        expect.compout = status;
+
+        return expect;
     }
 
     void writeActiveStrip (int strip)
@@ -187,8 +204,8 @@ namespace Comparator {
         uint8_t adr = ADR_COMP_CONFIG;
         state &= 0x1; // max 1 bits
         uint32_t status = Serial::read(adr);
-        status &= 0x1 << 5;
-        status |= 0x1 & (state << 5);
+        status &= ~(0x1   << 5);
+        status |=  (state << 5);
         Serial::write(adr, status);
     }
 
@@ -214,7 +231,7 @@ namespace Comparator {
         uint8_t adr = ADR_PULSE_CTRL;
         uint32_t status = Serial::read (adr);
         status &= ~(0x1 << 10);
-        status |= state;
+        status |= ((0x1&state) << 10);
         Serial::write(adr, status);
     }
 
@@ -227,14 +244,14 @@ namespace Comparator {
         iscaler.iamp  = .0000430;
         iscaler.ifamp = .0000430;
         iscaler.ioff  = .00000746;
-        iscaler.i3v3  = .02;
-        iscaler.i5v0  = .02;
+        iscaler.i3v3  =  1.0/9375.0;
+        iscaler.i5v0  =  1.0/(970*0.033);
 
         icomp.ibias = 1000000. * iscaler.ibias * ADC::readVoltage (0); //microamps
         icomp.ioff  = 1000000. * iscaler.ioff  * ADC::readVoltage (1); //microamps
         icomp.iamp  = 1000000. * iscaler.iamp  * ADC::readVoltage (2); //microamps
         icomp.ifamp = 1000000. * iscaler.ifamp * ADC::readVoltage (3); //microamps
-        icomp.i3v3  = 1000.    * iscaler.i3v3  * ADC::readVoltage (4); //milliamps
+        icomp.i3v3  = 1000000. * iscaler.i3v3  * ADC::readVoltage (4); //microamps
         icomp.i5v0  = 1000.    * iscaler.i5v0  * ADC::readVoltage (5); //milliamps
 
         return icomp;

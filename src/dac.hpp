@@ -12,11 +12,11 @@ class DAC {
         void writeVoltage (double voltage);
 
         double voltage (int dac_counts);
+        void writeThreshold (float millivolts);
 
         int m_dac;
 
     protected:
-        static const double VREF;
 
         void setPulseDAC();
         void setCompDAC();
@@ -28,6 +28,7 @@ class DAC {
         static const uint32_t din[2];
         static const uint32_t clk[2];
         static const uint32_t adr[2];
+        static const double   VREF[2];
 };
 
 class PDAC : public DAC {

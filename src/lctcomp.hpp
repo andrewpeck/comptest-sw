@@ -19,16 +19,18 @@ namespace Comparator {
     void printPattern (struct LCTpattern_t pattern);
     struct LCTpattern_t patternRead ();
 
-    int readHalfstripsErrcnt();
-    int readThresholdsErrcnt();
-    int readCompoutErrcnt();
+    uint32_t readHalfstrips();
+
+    uint32_t readHalfstripsErrcnt();
+    uint32_t readThresholdsErrcnt();
+    uint32_t readCompoutErrcnt();
 
     void resetCounters();
     void resetHalfstripsErrcnt();
     void resetCompoutErrcnt();
     void resetThresholdsErrcnt();
 
-    enum PKmode_t { PKMODE0, PKMODE1, PKMODE2 };
+    enum PKmode_t { PKMODE0, PKMODE1, PKMODE2 , PKMODE3};
     enum PKtime_t { PKTIME25, PKTIME50, PKTIME75, PKTIME100, PKTIME125, PKTIME150, PKTIME175, PKTIME200 };
 
     void writePeakMode (PKmode_t peakmode);
@@ -37,6 +39,7 @@ namespace Comparator {
     void writeBxDelay (int delay);
 
     void writePatternExpect (struct LCTpattern_t expect);
+    struct LCTpattern_t  readPatternExpect ();
     void writeActiveStrip (int strip);
     void writeActiveStripMask (uint32_t mask);
 

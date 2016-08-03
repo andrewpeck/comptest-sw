@@ -8,27 +8,28 @@ static const double PASS_THRESHOLD   = 0.5;
 
 
 /* Number of Pulses to Inject at Each Setting */
-static const int   NUM_PULSES       = 30;
+static const int   NUM_PULSES       = 100;
 
-/* Comparator Threshold Value (in volts) */
-static const float CDAC_VALUE       = 120;
+/* Comparator Threshold Value */
+static const float CDAC_VALUE       = 0.05/5 * ((1<<14)-1);
+//static const float CDAC_VALUE       = (1<<14)-100;
 
 /* Min/Max pulse DAC value to scan over */
 static const int   PDAC_MIN              = 0;
-static const int   THRESHOLDS_PDAC_MAX   = 5461;
-static const int   OFFSETS_PDAC_MAX      = 2184;
+static const int   THRESHOLDS_PDAC_MAX   = 1<<14;
+static const int   OFFSETS_PDAC_MAX      = 1<<14;
 
 /* 1 scans every step, 2 skips a step, 3 skips two steps, etc*/
 static const int   SCAN_GRANULARITY = 218;
 
 /* Comparator Injection Delay */
-static const int   DDD_DELAY        = 50;
+static const int   DDD_DELAY        = 0;
 
 /* FPGA Integer BX Delay */
-static const int BX_DELAY = 6;
+static const int BX_DELAY = 15;
 
 /* Integer Pulse Width */
-static const int PULSE_WIDTH = 2;
+static const int PULSE_WIDTH = 8;
 
 /* Triad SM Persistance */
 static const int   TRIAD_PERSIST    = 0;

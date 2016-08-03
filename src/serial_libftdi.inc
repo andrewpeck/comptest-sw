@@ -1,27 +1,25 @@
 #ifndef SERIAL_LIBFTDI_C
 #define SERIAL_LIBFTDI_C
 
-//#define ASYNC_WRITE
-//#define ASYNC_READ
+#define ASYNC_WRITE
+#define ASYNC_READ
+#include <time.h>
 #include <libftdi1/ftdi.h>
-//#include <ftdi.h>
 
     int ft_write (uint8_t *write_data, int num_bytes);
     int ft_read(uint8_t* read_data, int num_bytes);
     static struct ftdi_context *ftdi;
 
-    void usleep2 (int usdelay)
-    {
-        static const int NANOS =  1000000000LL;
-        static const int MICROS = 1000000LL;
-        int nanodelay = usdelay * NANOS / MICROS;
-        struct timespec delay;
-        delay.tv_sec = 0;
-        delay.tv_nsec = nanodelay;
-        clock_nanosleep(CLOCK_MONOTONIC, 0, &delay, NULL);
-    }
-
-
+    //void usleep2 (int usdelay)
+    //{
+    //    static const int NANOS =  1000000000LL;
+    //    static const int MICROS = 1000000LL;
+    //    int nanodelay = usdelay * NANOS / MICROS;
+    //    struct timespec delay;
+    //    delay.tv_sec = 0;
+    //    delay.tv_nsec = nanodelay;
+    //    clock_nanosleep(CLOCK_MONOTONIC, 0, &delay, NULL);
+    //}
 
     static int f;
 
@@ -91,8 +89,12 @@
             exit(-1);
         }
 
-        ftdi->type = TYPE_232H;
-        ftdi->type = TYPE_232H;
+        //ftdi_usb_purge_buffers(ftdi);
+        //ftdi_usb_close(ftdi);
+        //ftdi_free(ftdi);
+
+        //ftdi->type = TYPE_232H;
+        //ftdi->max_packet_size=1; 
         //ftdi->usb_write_timeout = 10;
         //ftdi->usb_read_timeout  = 10;
 
@@ -109,21 +111,21 @@
         }
 
         ftdi_usb_reset(ftdi); 
-
         ftdi_set_bitmode(ftdi,0, BITMODE_RESET); // reset
         ftdi_usb_purge_buffers(ftdi);
-        //ftdi_set_baudrate(ftdi, 921600);
+
+        usleep(1000);
+        ftdi_set_bitmode(ftdi,0,BITMODE_SYNCFF);
+        usleep(1000);
 
         ftdi_read_data_set_chunksize(ftdi, 6);
         ftdi_write_data_set_chunksize(ftdi, 6);
 
-        usleep2(1000);
 
-        ftdi_set_bitmode(ftdi,0,BITMODE_SYNCFF);
 
-        usleep2(1000);
 
-        ftdi_set_latency_timer (ftdi, 4);
+        ftdi_set_latency_timer (ftdi, 5);
+        //ftdi_set_latency_timer (ftdi,4);
 
         //flushSerialStatemachine();
         //flushSerialStatemachine();
@@ -139,9 +141,11 @@
     int ft_write (uint8_t *write_data, int num_bytes)
     {
 #ifdef ASYNC_WRITE
-        auto res = ftdi_write_data_submit(ftdi, write_data, num_bytes);
-        //usleep2(5);
-        return (res->completed);
+        ftdi_write_data_submit(ftdi, write_data, num_bytes);
+        //delete res; 
+        //usleep(5);
+        //return (res->completed);
+        return (0); 
 #else
         while (true) {
             f = ftdi_write_data(ftdi, write_data, num_bytes);
@@ -155,7 +159,7 @@
     int ft_read(uint8_t* read_data, int num_bytes)
     {
         #ifdef ASYNC_READ
-            //usleep2(1); 
+            //usleep(1); 
             auto res = ftdi_read_data_submit(ftdi, read_data, num_bytes);
             //return(ftdi_transfer_data_done(res)); 
             return(ftdi_transfer_data_done(res)); 

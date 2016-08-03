@@ -67,7 +67,6 @@ namespace Emulator {
                 {
                     std::normal_distribution<double> distribution(0.0,4.0);
 
-                    static const int shaping_time = 100;
                     double threshold = 0.1+cdac_value+fabs(distribution(generator));
                     bool isValid = (pdac_value) > (threshold);
 

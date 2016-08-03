@@ -1,5 +1,6 @@
 #include "mux.hpp"
 #include "registers.hpp"
+#include <cassert>
 
 
 //void halfstripMaptoMux (uint32_t halfstrips)
@@ -93,39 +94,34 @@ namespace Mux {
         Serial::write (adr, status);
     }
 
-    void configStripLH (int strip, struct MuxConfig_t &config)
-    {
-        config.in[strip] = HIGH;
-        if (strip>0)
-            config.in[strip-1]=MED;
-        else
-            config.prev=MED;
-
-        if (strip<15)
-            config.in[strip+1]=LOW;
-        else
-            config.next=LOW;
-    }
-
     uint32_t configToCompoutExpect (MuxConfig_t config)
     {
-        //TODO: fill in this code
-        return (1);
+        bool expectCompout=false;
+        expectCompout |= (config.next==HIGH && config.in[15]==MED);
+        return expectCompout;
     }
 
-    void configStripRH (int strip, struct MuxConfig_t &config)
+    void configStrip (int strip, int side, struct MuxConfig_t &config)
     {
+        static const int LEFT  = 0x0;
+        static const int RIGHT = 0x1;
+        assert (side==RIGHT || side==LEFT);
+
         config.in[strip] = HIGH;
 
-        if (strip>0)
-            config.in[strip-1]=LOW;
-        else
-            config.prev=LOW;
+        if (side==RIGHT) {
+            if (strip==0)  config.prev=LOW;
+            else           config.in[strip-1]=LOW;
+            if (strip==15) config.next=MED;
+            else           config.in[strip+1]=MED;
+        }
 
-        if (strip<15)
-            config.in[strip+1]=MED;
-        else
-            config.next=MED;
+        else if (side==LEFT) {
+            if (strip==0)  config.prev=MED;
+            else           config.in[strip-1]=MED;
+            if (strip==15) config.next=LOW;
+            else           config.in[strip+1]=LOW;
+        }
     }
 
     void configAllChannelsOff(struct MuxConfig_t &config)
