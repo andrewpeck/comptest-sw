@@ -46,11 +46,11 @@ int Serial::rx ()
 
         // std::cout << rx_char[0] ;
 
-        // std::cout << rx_char[0] << std::endl;
+         //std::cout << rx_char[0] << std::endl;
         _rx_buf [rx_buf_index] = rx_char[0];
 
         if (rx_char[0] == '\n' && _rx_buf[rx_buf_index-1] == '\r') {
-            //std::cout << rx_buf << std::endl;
+            //std::cout << _rx_buf << std::endl;
             _rx_buf [rx_buf_index-1] = '\0';
             return (rx_buf_index-1);
         }

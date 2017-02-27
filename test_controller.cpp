@@ -1,5 +1,6 @@
 #include "rx_parser.h"
 #include "now.h"
+#include "test_enums.h"
 #include "serial.h"
 #include "colors.h"
 #include "test_scanner.h"
@@ -18,8 +19,9 @@
 #include <boost/tokenizer.hpp>
 #include <boost/foreach.hpp>
 
+#include "data.cpp"
 
-int main () {
+int main (int argc, char *argv[]) {
 
     float data [1024];
     float amplitude [1024];
@@ -36,37 +38,51 @@ int main () {
     hfile->Write();
     histoWriter writer(hfile);
 
-    int fd = open ("/dev/cu.usbmodem222", O_RDWR | O_NOCTTY | O_SYNC);
+    std::string ttyname = "/dev/cu.usbmodem401341";
+    if (argc>1) {
+        ttyname = argv[1];
+    }
+    int fd = open (ttyname.c_str(), O_RDWR | O_NOCTTY | O_SYNC);
 
     scanner.setSerialFd (fd);
 
     tcflush(fd, TCIOFLUSH); // clear buffer
+    int dac_start = 0;
+    int dac_step = 1;
+    int num_pulses = 1;
 
-    for (int iside = 0; iside < 2; iside++) {
-        for (int istrip = 0; istrip < 16; istrip ++) {
-            scanner.scanOffset(istrip, iside);
-            scanner.flushController();
-            // convert test settings to amplitude
-            // convert uint16_t data to float ??
-             writer.fill2DHistogram(test_offset, istrip, iside, data, amplitude);
-        }
-    }
 
-    for (int iside = 0; iside < 2; iside++) {
-        for (int istrip = 0; istrip < 16; istrip ++) {
-            scanner.scanThresh(istrip, iside);
-            scanner.flushController();
-            // convert test settings to amplitude
-            // convert uint16_t data to float ??
-             writer.fill2DHistogram(test_thresh, istrip, iside, data, amplitude);
-        }
-    }
+   // scanner.reset();
+    scanner.flushController();
 
-    for (int ichannel = 0; ichannel < 6; ichannel++) {
-        scanner.scanCurrent(ichannel);
-        scanner.flushController();
-        writer.fill1DHistogram(test_currents, ichannel, data);
-    }
+
+      for (int iside = 0; iside < 2; iside++) {
+          for (int istrip = 0; istrip < 16; istrip ++) {
+              scanner.scanOffset(istrip, iside, dac_start, dac_step, num_pulses);
+              scanner.flushController();
+              // convert test settings to amplitude
+              // convert uint16_t data to float ??
+              interpretOffsets(data, 1024, 2048);
+              writer.fill2DHistogram(test_offset, istrip, iside, data, amplitude);
+          }
+      }
+
+      scanner.flushController();
+      for (int iside = 0; iside < 2; iside++) {
+          for (int istrip = 0; istrip < 16; istrip ++) {
+              scanner.scanThresh(istrip, iside, dac_start, dac_step, num_pulses);
+              scanner.flushController();
+              // convert test settings to amplitude
+              // convert uint16_t data to float ??
+               writer.fill2DHistogram(test_thresh, istrip, iside, data, amplitude);
+          }
+      }
+
+     for (int ichannel = 0; ichannel < 6; ichannel++) {
+         scanner.scanCurrent(ichannel);
+         scanner.flushController();
+         writer.fill1DHistogram(test_currents, ichannel, data);
+     }
 
     // for(auto& iter : params) {
     //     std::cout << "data :: " << iter.first << " = " << iter.second << std::endl;

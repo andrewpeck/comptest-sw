@@ -32,7 +32,7 @@ void histoWriter::fill1DHistogram (int scan, int channel, float* data_x, int n_e
 
 void histoWriter::fill2DHistogram (int scan, int strip, int side, float* data_x, float* data_y, float xmin, float xmax, float ymin, float ymax) {
 
-    int nbinsx = 1024;
+    int nbinsx = 512;
     double xlow = 0;
     double xhigh = 0;
 
