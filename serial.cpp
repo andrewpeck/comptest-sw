@@ -16,15 +16,15 @@ int Serial::rx ()
     int iframe = 0;
     // memset(rx_buf, 0, sizeof(rx_buf));
 
+    int n = 0;
     while(iframe < max_packet_length) {
 
         //--------------------------------------------------------------------------------------------------------------
 
         fd_set set;
         struct timeval timeout;
-        int rv;
         int len = 100;
-        int n = -1;
+        n=-1;
 
         FD_ZERO(&set); /* clear the set */
         FD_SET(fd_, &set); /* add our file descriptor to the set */
@@ -32,14 +32,23 @@ int Serial::rx ()
         timeout.tv_sec = 0;
         timeout.tv_usec = 5000;
 
-        rv = select(fd_ + 1, &set, NULL, NULL, &timeout);
+        int rv = select(fd_ + 1, &set, NULL, NULL, &timeout);
         if (rv == -1)
             perror("select\n"); /* an error accured */
         else if(rv == 0) {
-            if (debug) printf("sys  :: timeout\n"); /* a timeout occured */
+            //printf("sys  :: timeout\n"); /* a timeout occured */
+            return 0;
         }
         else
-            n = read(fd_, rx_char, sizeof(rx_char));
+
+        n = read(fd_, rx_char, sizeof(rx_char));
+
+        //printf("%c", rx_char[0]);
+        //printf("%c", rx_char[0]);
+        //if (rx_char[0]=='\r')
+        //printf("cr");
+        //if (rx_char[0]=='\n')
+        //printf("lf");
 
         //-exit if no data was read ------------------------------------------------------------------------------------
         if (n<=0) break;
@@ -59,16 +68,32 @@ int Serial::rx ()
         //-increment frame counter--------------------------------------------------------------------------------------
         iframe++;
     }
-    return 0;
+    return n;
 }
 
 int Serial::tx (char *write_data, int write_size)
 {
     // Write Command
-    write (fd_, write_data, write_size-1);
-    return EXIT_SUCCESS;
+
+    for (int i=0; i<write_size; i++) {
+
+        //printf("%c\n", write_data[i]);
+        write (fd_, write_data+i, 1);
+
+        if (write_data[i] =='\n') {
+            tcdrain(fd_);
+            return EXIT_SUCCESS;
+        }
+    }
+    return EXIT_FAILURE;
 }
 
 void Serial::setFd (int fd) {
     fd_ = fd;
+}
+
+void Serial::flush () {
+   // rx();
+    //tcflush(fd_, TCIOFLUSH); // clear buffer
+    //printf("sys  :: flushed -- %s\n", _rx_buf);
 }

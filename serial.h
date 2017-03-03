@@ -13,6 +13,7 @@ class Serial {
 
         int rx ();
         int tx (char *write_data, int write_size);
+        void flush();
         void setFd (int fd);
 
     private:

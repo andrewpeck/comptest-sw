@@ -86,8 +86,9 @@ template <class T>
 void Parser<T>::parseBinaryLine (const std::string *line)
 {
     for (int i=0; i<line->length()/4; i++) {
-        _data [i] = (T) strtol (line->substr(i*4,4).c_str(), NULL, 16);
-        // std::cout << std::hex << data[i] << std::endl;
+        uint16_t data = strtol (line->substr(i*4,4).c_str(), NULL, 16);
+        _data [i] = (T) data;
+        std::cout << std::hex << data << std::endl;
     }
     (*_params) ["DATA_RX"] = 1;
     //printf("sys  :: loaded data to array\n");

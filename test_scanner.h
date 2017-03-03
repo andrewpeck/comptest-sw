@@ -55,6 +55,7 @@ int Scanner<T>::scanCurrent (int channel) {
 
 template <class T>
 int Scanner<T>::scanGeneric (Dict test_params) {
+    //printf("scanGeneric\n");
 
 
     int scan = test_params["TEST"];
@@ -128,6 +129,7 @@ int Scanner<T>::scanGeneric (Dict test_params) {
 
 template <class T>
 int Scanner<T>::scanOffset (int strip, int side, int dac_start, int dac_step, int num_pulses) {
+    //printf("scanOffset\n");
 
     Dict set_params;
 
@@ -222,6 +224,7 @@ template <class T>
 int Scanner<T>::readController (int ireads)
 {
 
+    // debug printf("readController");
     int nth_read = 0;
     while (nth_read<ireads) {
         int n = serial.rx();
@@ -241,8 +244,7 @@ int Scanner<T>::readController (int ireads)
 template <class T>
 void Scanner<T>::flushController ()
 {
-        serial.rx();
-        printf("sys  :: flushed -- %s\n", _rx_buf);
+        serial.flush();
 }
 
 template <class T>

@@ -46,15 +46,24 @@ int main (int argc, char *argv[]) {
 
     scanner.setSerialFd (fd);
 
-    tcflush(fd, TCIOFLUSH); // clear buffer
+   //tcflush(fd, TCIOFLUSH); // clear buffer
     int dac_start = 0;
     int dac_step = 1;
-    int num_pulses = 1;
+    int num_pulses = 1024;
 
 
-   // scanner.reset();
-    scanner.flushController();
-
+//    scanner.reset();
+//    sleep (2);
+//    scanner.flushController();
+//     scanner.flushController();
+//     scanner.flushController();
+//     scanner.flushController();
+//     scanner.flushController();
+//     scanner.flushController();
+//
+     scanner.flushController();
+     tcflush(fd, TCIOFLUSH); // clear buffer
+//     scanner.flushController();
 
       for (int iside = 0; iside < 2; iside++) {
           for (int istrip = 0; istrip < 16; istrip ++) {
@@ -88,6 +97,7 @@ int main (int argc, char *argv[]) {
     //     std::cout << "data :: " << iter.first << " = " << iter.second << std::endl;
     // }
 
+     close (fd);
     return 1;
 }
 
