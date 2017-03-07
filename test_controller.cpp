@@ -49,7 +49,8 @@ int main (int argc, char *argv[]) {
    //tcflush(fd, TCIOFLUSH); // clear buffer
     int dac_start = 0;
     int dac_step = 1;
-    int num_pulses = 1024;
+    int num_pulses = 128;
+    int num_entries = 1024;
 
 
 //    scanner.reset();
@@ -69,9 +70,12 @@ int main (int argc, char *argv[]) {
           for (int istrip = 0; istrip < 16; istrip ++) {
               scanner.scanOffset(istrip, iside, dac_start, dac_step, num_pulses);
               scanner.flushController();
-              // convert test settings to amplitude
-              // convert uint16_t data to float ??
-              interpretOffsets(data, 1024, 2048);
+
+              //
+              convertOffsets(data, num_entries, num_pulses);
+              convertAmplitudes(test_offset, dac_start, dac_step, amplitude, num_entries);
+
+              //
               writer.fill2DHistogram(test_offset, istrip, iside, data, amplitude);
           }
       }
@@ -81,16 +85,20 @@ int main (int argc, char *argv[]) {
           for (int istrip = 0; istrip < 16; istrip ++) {
               scanner.scanThresh(istrip, iside, dac_start, dac_step, num_pulses);
               scanner.flushController();
-              // convert test settings to amplitude
-              // convert uint16_t data to float ??
+
+              //
+              convertThresholds(data, num_entries, num_pulses);
+              convertAmplitudes(test_thresh, dac_start, dac_step, amplitude, num_entries);
+
                writer.fill2DHistogram(test_thresh, istrip, iside, data, amplitude);
           }
       }
 
      for (int ichannel = 0; ichannel < 6; ichannel++) {
          scanner.scanCurrent(ichannel);
-         scanner.flushController();
+         convertCurrents(data, num_entries, ichannel);
          writer.fill1DHistogram(test_currents, ichannel, data);
+         scanner.flushController();
      }
 
     // for(auto& iter : params) {

@@ -1,16 +1,94 @@
+#include "test_enums.h"
+#include "board_characteristics.h"
 
-void interpretOffsets (float* data, int num_entries, int full_scale) {
+void convertCounts (float* data, int num_entries, int full_scale) {
+    // we read in error counts and we want to normalize that to the number of pulses, producing a sigmoid efficiency curve
     for (int i=0; i<num_entries; i++) {
         //printf("%f\n", data[i]);
-        data[i] = 1.0 - (data[i] / full_scale);
+        //data[i] = 1.0 - (data[i] / full_scale);
+        data[i] = (data[i] / full_scale);
     }
-    // we read in error counts and we want to normalize that to the number of pulses, producing a sigmoid efficiency curve
 }
 
-void interpretAmplitudes (float* amplitude, int num_entries) {
-
+void convertOffsets (float* data, int num_entries, int full_scale) {
+    convertCounts(data, num_entries, full_scale);
 }
+
+void convertThresholds (float* data, int num_entries, int full_scale) {
+    convertCounts(data, num_entries, full_scale);
+}
+
+void convertAmplitudes (int test, int dac_start, int dac_step, float* amplitude, int num_entries) {
+    for (int i=0; i<num_entries; i++) {
+
+        uint16_t dac_value   = dac_start + i*dac_step;
+
+        float dac_millivolts = pulse_vref * dac_value;
+        float pulse_voltage  = dac_millivolts * shaping_scale_factor;
+
+
+        float  hi_amplitude = pulse_voltage * attenuation_high;
+        float med_amplitude = pulse_voltage * attenuation_med;
+        float low_amplitude = pulse_voltage * attenuation_low;
+
+        if (test==test_thresh) {
+            amplitude[i] = hi_amplitude;
+        }
+
+        else if (test==test_offset) {
+            amplitude[i] = med_amplitude - low_amplitude;
+            std::cout << "amplitude = " << amplitude[i] << std::endl;
+        }
+
+    }
+}
+
+
+float convertIfamp (float voltage) {
+        return ( (5.0 - voltage)/r_ifamp);
+}
+
+float convertIbias (float voltage) {
+        return ( voltage/r_ifamp);
+}
+
+float convertIoff (float voltage) {
+        return ( (5.0 - voltage)/r_ioff);
+}
+
+float convertIamp (float voltage) {
+        return ( (5.0 - voltage)/r_iamp);
+}
+
+float convert3v3  (float voltage) {
+        return ( voltage / (r_ps3v3 * ps3v3_gain_stage_1 * ps3v3_gain_stage_2 ));
+}
+
+float convert5v0  (float voltage) {
+        return ( voltage / (r_ps5v0 * ps5v0_gain_stage_1 * ps5v0_gain_stage_2 ));
+}
+
+// create indexable array of conversion functions
+float (*conversion_functions [] ) (float data) = {convertIfamp, convertIamp, convertIoff, convertIbias, convert5v0, convert3v3};
 
 void convertCurrents (float* data, int num_entries, int channel) {
+
+    // need to scale to 1000 or 1000000 depending on uV vs. mV
+    float scale_factor = 1;
+
+    if (strcmp(current_units[channel], "mA")==0) {
+        scale_factor=1000;
+    }
+    else if (strcmp(current_units[channel], "uA")==0) {
+        scale_factor=1000000;
+    }
+
+    // use correct conversion function
+    float (*func ) (float data) = (conversion_functions[channel]);
+
+    for (int i=0; i<num_entries; i++) {
+        float volts = data[i] * 3.3;
+        data[i] = scale_factor *  (*func) (volts);
+    }
 
 }

@@ -24,6 +24,10 @@ void histoWriter::fill1DHistogram (int scan, int channel, float* data_x, int n_e
 
     TH1F* h1 = new TH1F (name, title,  nbinsx, xlow, xhigh);
 
+
+    h1 -> GetXaxis()->SetTitle(current_units[channel]);
+    h1 -> GetYaxis()->SetTitle("counts");
+
     for (int i=0;i<n_entries;i++) {
         h1->Fill(data_x[i]);
     }
@@ -32,7 +36,7 @@ void histoWriter::fill1DHistogram (int scan, int channel, float* data_x, int n_e
 
 void histoWriter::fill2DHistogram (int scan, int strip, int side, float* data_x, float* data_y, float xmin, float xmax, float ymin, float ymax) {
 
-    int nbinsx = 512;
+    int nbinsx = 1024;
     double xlow = 0;
     double xhigh = 0;
 
@@ -56,4 +60,8 @@ void histoWriter::fill2DHistogram (int scan, int strip, int side, float* data_x,
     for (int i=0;i<1024;i++) {
         h2->Fill(data_y[i], data_x[i]);
     }
+
+    h2 -> GetXaxis()->SetTitle("mV");
+    h2 -> GetYaxis()->SetTitle("error rate");
+
 }
