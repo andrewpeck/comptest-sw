@@ -82,6 +82,7 @@ int Scanner<T>::scanGeneric (Dict test_params) {
         sprintf(tx_buf, "%s %i\r\n", testname_short[scan], test_params["CHANNEL"]);
     }
 
+    printf("%s\n", tx_buf);
     serial.tx(tx_buf, sizeof(tx_buf)/sizeof(tx_buf[0]));
 
     // iread=1. read in parameters line
@@ -232,7 +233,7 @@ int Scanner<T>::readController (int ireads)
         if (n>0) {
             nth_read++;
             // debug
-            // printf("%s\n", _rx_buf);
+            printf("%s\n", _rx_buf);
             parser.parseBuffer(_rx_buf, n);
         }
 

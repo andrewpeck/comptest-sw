@@ -47,63 +47,75 @@ int main (int argc, char *argv[]) {
     scanner.setSerialFd (fd);
 
    //tcflush(fd, TCIOFLUSH); // clear buffer
-    int dac_start = 0;
-    int dac_step = 1;
-    int num_pulses = 128;
+    int dac_start = 10;
+    int dac_step = 10;
+    int num_pulses = 25;
     int num_entries = 1024;
 
 
-//    scanner.reset();
-//    sleep (2);
-//    scanner.flushController();
-//     scanner.flushController();
-//     scanner.flushController();
-//     scanner.flushController();
-//     scanner.flushController();
-//     scanner.flushController();
-//
+    //scanner.reset();
+    //    sleep (2);
+    scanner.flushController();
+    scanner.flushController();
+    scanner.flushController();
+    scanner.flushController();
+    //     scanner.flushController();
+    //     scanner.flushController();
+    //
      scanner.flushController();
      tcflush(fd, TCIOFLUSH); // clear buffer
-//     scanner.flushController();
 
-      for (int iside = 0; iside < 2; iside++) {
-          for (int istrip = 0; istrip < 16; istrip ++) {
-              scanner.scanOffset(istrip, iside, dac_start, dac_step, num_pulses);
-              scanner.flushController();
+    //     scanner.flushController();
+    // scanner.scanOffset(1, 0, dac_start, dac_step, num_pulses);
+    // scanner.flushController();
+//    convertOffsets(data, num_entries, num_pulses);
+//     convertAmplitudes(test_offset, dac_start, dac_step, amplitude, num_entries);
+     // writer.fill2DHistogram(test_offset, 2, 0, data, amplitude);
 
-              //
-              convertOffsets(data, num_entries, num_pulses);
-              convertAmplitudes(test_offset, dac_start, dac_step, amplitude, num_entries);
+    for (int iside = 0; iside < 2; iside++) {
+        for (int istrip = 0; istrip < 16; istrip ++) {
+            scanner.scanOffset(istrip, iside, dac_start, dac_step, num_pulses);
+            scanner.flushController();
 
-              //
-              writer.fill2DHistogram(test_offset, istrip, iside, data, amplitude);
-          }
-      }
+            for (int i=0; i<num_entries; i++) {
+                amplitude[i] = dac_start + dac_step*i;
+            }
+            //
+            convertCounts(data, num_entries, num_pulses);
+            //convertAmplitudes(test_offset, dac_start, dac_step, amplitude, num_entries);
 
-      scanner.flushController();
-      for (int iside = 0; iside < 2; iside++) {
-          for (int istrip = 0; istrip < 16; istrip ++) {
-              scanner.scanThresh(istrip, iside, dac_start, dac_step, num_pulses);
-              scanner.flushController();
+            //
+            writer.fill2DHistogram(test_offset, istrip, iside, data, amplitude);
+        }
+    }
 
-              //
-              convertThresholds(data, num_entries, num_pulses);
-              convertAmplitudes(test_thresh, dac_start, dac_step, amplitude, num_entries);
+    scanner.flushController();
+    for (int iside = 0; iside < 2; iside++) {
+        for (int istrip = 0; istrip < 16; istrip ++) {
+            scanner.scanThresh(istrip, iside, dac_start, dac_step, num_pulses);
+            scanner.flushController();
 
-               writer.fill2DHistogram(test_thresh, istrip, iside, data, amplitude);
-          }
-      }
+            for (int i=0; i<num_entries; i++) {
+                amplitude[i] = dac_start + dac_step*i;
+            }
 
-     for (int ichannel = 0; ichannel < 6; ichannel++) {
-         scanner.scanCurrent(ichannel);
-         convertCurrents(data, num_entries, ichannel);
-         writer.fill1DHistogram(test_currents, ichannel, data);
-         scanner.flushController();
-     }
+            convertCounts(data, num_entries, num_pulses);
+            //convertAmplitudes(test_thresh, dac_start, dac_step, amplitude, num_entries);
 
-    // for(auto& iter : params) {
-    //     std::cout << "data :: " << iter.first << " = " << iter.second << std::endl;
-    // }
+             writer.fill2DHistogram(test_thresh, istrip, iside, data, amplitude);
+        }
+    }
+
+//  for (int ichannel = 0; ichannel < 6; ichannel++) {
+//      scanner.scanCurrent(ichannel);
+//      //convertCurrents(data, num_entries, ichannel);
+//      writer.fill1DHistogram(test_currents, ichannel, data);
+//      scanner.flushController();
+//  }
+
+ // for(auto& iter : params) {
+ //     std::cout << "data :: " << iter.first << " = " << iter.second << std::endl;
+ // }
 
      close (fd);
     return 1;

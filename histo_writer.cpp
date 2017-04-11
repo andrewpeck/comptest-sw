@@ -64,4 +64,8 @@ void histoWriter::fill2DHistogram (int scan, int strip, int side, float* data_x,
     h2 -> GetXaxis()->SetTitle("mV");
     h2 -> GetYaxis()->SetTitle("error rate");
 
+    h2 -> SetMarkerStyle (2);
+
+    h2->Draw("COLZ");
+
 }

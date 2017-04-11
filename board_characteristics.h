@@ -4,7 +4,7 @@
 
 static const float pulse_vref = 5.0;
 
-static const float shaping_scale_factor = 0.1;
+static const float shaping_scale_factor = 0.266;
 
 static const float attenuation_high  = 1./pow(10, 6.0/20);
 static const float attenuation_med   = 1./pow(10,11.0/20);

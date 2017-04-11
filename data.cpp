@@ -10,20 +10,12 @@ void convertCounts (float* data, int num_entries, int full_scale) {
     }
 }
 
-void convertOffsets (float* data, int num_entries, int full_scale) {
-    convertCounts(data, num_entries, full_scale);
-}
-
-void convertThresholds (float* data, int num_entries, int full_scale) {
-    convertCounts(data, num_entries, full_scale);
-}
-
 void convertAmplitudes (int test, int dac_start, int dac_step, float* amplitude, int num_entries) {
     for (int i=0; i<num_entries; i++) {
 
         uint16_t dac_value   = dac_start + i*dac_step;
 
-        float dac_millivolts = pulse_vref * dac_value;
+        float dac_millivolts = 1000. * pulse_vref * dac_value / 16383.;
         float pulse_voltage  = dac_millivolts * shaping_scale_factor;
 
 
@@ -37,7 +29,7 @@ void convertAmplitudes (int test, int dac_start, int dac_step, float* amplitude,
 
         else if (test==test_offset) {
             amplitude[i] = med_amplitude - low_amplitude;
-            std::cout << "amplitude = " << amplitude[i] << std::endl;
+            printf("amplitude=%f (%f-%f)\r\n", amplitude[i], med_amplitude, low_amplitude);
         }
 
     }
