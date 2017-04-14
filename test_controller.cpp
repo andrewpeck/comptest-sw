@@ -5,6 +5,7 @@
 #include "colors.h"
 #include "test_scanner.h"
 #include "histo_writer.h"
+#include "board_characteristics.h"
 
 #include <TFile.h>
 #include <TStyle.h>
@@ -52,10 +53,6 @@ int main (int argc, char *argv[]) {
 
    //tcflush(fd, TCIOFLUSH); // clear buffer
 
-    int dac_start   = 20;
-    int dac_step    = 1;
-    int num_pulses  = 25;
-    int num_entries = 1024;
 
     //scanner.reset();
     sleep (2);
@@ -75,17 +72,17 @@ int main (int argc, char *argv[]) {
 
      for (int iside = 0; iside < 2; iside++) {
          for (int istrip = 0; istrip < 16; istrip ++) {
-             scanner.scanOffset(istrip, iside, dac_start, dac_step, num_pulses);
+             scanner.scanOffset(istrip, iside, dac_start_offset, dac_step_offset, num_pulses);
              scanner.flushController();
 
              for (int i=0; i<num_entries; i++) {
-                 amplitude[i] = dac_start + dac_step*i;
+                 amplitude[i] = dac_start_offset + dac_step_offset*i;
              }
 
              convertCounts(data, num_entries, num_pulses);
 //           convertAmplitudes(test_offset, dac_start, dac_step, amplitude, num_entries);
 
-             writer.fill2DHistogram(test_offset, istrip, iside, data, amplitude);
+             //writer.fill2DHistogram(test_offset, istrip, iside, data, amplitude);
              writer.fillSummary (test_offset, istrip, iside, data);
          }
      }
@@ -94,22 +91,20 @@ int main (int argc, char *argv[]) {
      //
      //------------------------------------------------------------------------------------------------------------------
 
-     dac_start   = 60;
-
      scanner.flushController();
      for (int iside = 0; iside < 2; iside++) {
          for (int istrip = 0; istrip < 16; istrip ++) {
-             scanner.scanThresh(istrip, iside, dac_start, dac_step, num_pulses);
+             scanner.scanThresh(istrip, iside, dac_start_thresh, dac_step_thresh, num_pulses);
              scanner.flushController();
 
              for (int i=0; i<num_entries; i++) {
-                 amplitude[i] = dac_start + dac_step*i;
+                 amplitude[i] = dac_start_thresh + dac_step_thresh*i;
              }
 
              convertCounts(data, num_entries, num_pulses);
-//           convertAmplitudes(test_thresh, dac_start, dac_step, amplitude, num_entries);
+//           convertAmplitudes(test_thresh, dac_start_thresh, dac_step, amplitude, num_entries);
 
-             writer.fill2DHistogram(test_thresh, istrip, iside, data, amplitude);
+             //writer.fill2DHistogram(test_thresh, istrip, iside, data, amplitude);
 
              writer.fillSummary (test_thresh, istrip, iside, data);
          }

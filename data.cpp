@@ -1,13 +1,49 @@
 #include "test_enums.h"
 #include "board_characteristics.h"
+#include <stdint.h>
 
 void convertCounts (float* data, int num_entries, int full_scale) {
     // we read in error counts and we want to normalize that to the number of pulses, producing a sigmoid efficiency curve
     for (int i=0; i<num_entries; i++) {
-        //printf("%f\n", data[i]);
-        //data[i] = 1.0 - (data[i] / full_scale);
         data[i] = (data[i] / full_scale);
     }
+}
+
+float convertBin (int test, int bin) {
+
+        uint16_t start;
+        uint16_t step;
+
+        if (test==test_offset) {
+            start=dac_start_offset;
+            step=dac_step_offset;
+        }
+        else {
+            start=dac_start_thresh;
+            step=dac_step_thresh;
+        }
+
+        uint16_t dac_value   = start + bin*step;
+
+        float dac_millivolts = 1000. * pulse_vref * dac_value / 16383.;
+        float pulse_voltage  = dac_millivolts * shaping_scale_factor;
+
+
+        float  hi_amplitude = pulse_voltage * attenuation_high;
+        float med_amplitude = pulse_voltage * attenuation_med;
+        float low_amplitude = pulse_voltage * attenuation_low;
+
+        if (test==test_thresh) {
+            return hi_amplitude;
+        }
+
+        else if (test==test_offset) {
+            float amp = (med_amplitude - low_amplitude)/3.5;
+            return amp ; // 3.5==amp gain
+        }
+        else {
+            return 0;
+        }
 }
 
 void convertAmplitudes (int test, int dac_start, int dac_step, float* amplitude, int num_entries) {
@@ -28,7 +64,7 @@ void convertAmplitudes (int test, int dac_start, int dac_step, float* amplitude,
         }
 
         else if (test==test_offset) {
-            amplitude[i] = med_amplitude - low_amplitude;
+            amplitude[i] = (med_amplitude - low_amplitude)/3.5; // 3.5==amp gain
             printf("amplitude=%f (%f-%f)\r\n", amplitude[i], med_amplitude, low_amplitude);
         }
 
