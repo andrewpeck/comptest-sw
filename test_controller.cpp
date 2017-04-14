@@ -7,6 +7,8 @@
 #include "histo_writer.h"
 
 #include <TFile.h>
+#include <TStyle.h>
+#include <TCanvas.h>
 
 #include <iterator>
 #include <iostream>
@@ -35,7 +37,9 @@ int main (int argc, char *argv[]) {
     std::string filename = "tmp.root";
 
     TFile* hfile = new TFile(filename.c_str(),"RECREATE","LCT Comparator Test Results");
+
     hfile->Write();
+
     histoWriter writer(hfile);
 
     std::string ttyname = "/dev/cu.usbmodem401341";
@@ -47,64 +51,73 @@ int main (int argc, char *argv[]) {
     scanner.setSerialFd (fd);
 
    //tcflush(fd, TCIOFLUSH); // clear buffer
-    int dac_start = 10;
-    int dac_step = 10;
-    int num_pulses = 25;
+
+    int dac_start   = 20;
+    int dac_step    = 1;
+    int num_pulses  = 25;
     int num_entries = 1024;
 
-
     //scanner.reset();
-    //    sleep (2);
+    sleep (2);
     scanner.flushController();
     scanner.flushController();
     scanner.flushController();
     scanner.flushController();
-    //     scanner.flushController();
-    //     scanner.flushController();
-    //
+    scanner.flushController();
+    scanner.flushController();
+
      scanner.flushController();
      tcflush(fd, TCIOFLUSH); // clear buffer
 
-    //     scanner.flushController();
-    // scanner.scanOffset(1, 0, dac_start, dac_step, num_pulses);
-    // scanner.flushController();
-//    convertOffsets(data, num_entries, num_pulses);
-//     convertAmplitudes(test_offset, dac_start, dac_step, amplitude, num_entries);
-     // writer.fill2DHistogram(test_offset, 2, 0, data, amplitude);
+     //-----------------------------------------------------------------------------------------------------------------
+     //
+     //-----------------------------------------------------------------------------------------------------------------
 
-    for (int iside = 0; iside < 2; iside++) {
-        for (int istrip = 0; istrip < 16; istrip ++) {
-            scanner.scanOffset(istrip, iside, dac_start, dac_step, num_pulses);
-            scanner.flushController();
+     for (int iside = 0; iside < 2; iside++) {
+         for (int istrip = 0; istrip < 16; istrip ++) {
+             scanner.scanOffset(istrip, iside, dac_start, dac_step, num_pulses);
+             scanner.flushController();
 
-            for (int i=0; i<num_entries; i++) {
-                amplitude[i] = dac_start + dac_step*i;
-            }
-            //
-            convertCounts(data, num_entries, num_pulses);
-            //convertAmplitudes(test_offset, dac_start, dac_step, amplitude, num_entries);
+             for (int i=0; i<num_entries; i++) {
+                 amplitude[i] = dac_start + dac_step*i;
+             }
 
-            //
-            writer.fill2DHistogram(test_offset, istrip, iside, data, amplitude);
-        }
-    }
+             convertCounts(data, num_entries, num_pulses);
+//           convertAmplitudes(test_offset, dac_start, dac_step, amplitude, num_entries);
 
-    scanner.flushController();
-    for (int iside = 0; iside < 2; iside++) {
-        for (int istrip = 0; istrip < 16; istrip ++) {
-            scanner.scanThresh(istrip, iside, dac_start, dac_step, num_pulses);
-            scanner.flushController();
+             writer.fill2DHistogram(test_offset, istrip, iside, data, amplitude);
+             writer.fillSummary (test_offset, istrip, iside, data);
+         }
+     }
 
-            for (int i=0; i<num_entries; i++) {
-                amplitude[i] = dac_start + dac_step*i;
-            }
+     //------------------------------------------------------------------------------------------------------------------
+     //
+     //------------------------------------------------------------------------------------------------------------------
 
-            convertCounts(data, num_entries, num_pulses);
-            //convertAmplitudes(test_thresh, dac_start, dac_step, amplitude, num_entries);
+     dac_start   = 60;
+
+     scanner.flushController();
+     for (int iside = 0; iside < 2; iside++) {
+         for (int istrip = 0; istrip < 16; istrip ++) {
+             scanner.scanThresh(istrip, iside, dac_start, dac_step, num_pulses);
+             scanner.flushController();
+
+             for (int i=0; i<num_entries; i++) {
+                 amplitude[i] = dac_start + dac_step*i;
+             }
+
+             convertCounts(data, num_entries, num_pulses);
+//           convertAmplitudes(test_thresh, dac_start, dac_step, amplitude, num_entries);
 
              writer.fill2DHistogram(test_thresh, istrip, iside, data, amplitude);
-        }
-    }
+
+             writer.fillSummary (test_thresh, istrip, iside, data);
+         }
+     }
+
+     //-----------------------------------------------------------------------------------------------------------------
+     //
+     //-----------------------------------------------------------------------------------------------------------------
 
 //  for (int ichannel = 0; ichannel < 6; ichannel++) {
 //      scanner.scanCurrent(ichannel);
@@ -117,7 +130,7 @@ int main (int argc, char *argv[]) {
  //     std::cout << "data :: " << iter.first << " = " << iter.second << std::endl;
  // }
 
-     close (fd);
+    close (fd);
+
     return 1;
 }
-

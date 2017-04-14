@@ -69,3 +69,27 @@ void histoWriter::fill2DHistogram (int scan, int strip, int side, float* data_x,
     h2->Draw("COLZ");
 
 }
+
+
+void histoWriter::fillSummary (int scan, int strip, int side, float* data, int n_entries) {
+
+    TH2F* h2;
+    if (scan==test_thresh) {
+        if (side==0)
+            h2=thresholds_l;
+        else
+            h2=thresholds_r;
+    }
+    else {
+        if (side==0)
+            h2=offsets_l;
+        else
+            h2=offsets_r;
+    }
+
+    for (int ibin=0;ibin<1024;ibin++) {
+        h2->Fill(strip, ibin, data[ibin]+0.0000000001); // add a tiny offset so that we don't draw as white
+    }
+
+    h2->Draw("COLZ");
+}
