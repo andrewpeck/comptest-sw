@@ -4,6 +4,11 @@
 #include "data.cpp"
 #include <TH2F.h>
 #include <TFile.h>
+#include <TGraph.h>
+#include <TF1.h>
+#include <TMarker.h>
+#include <TCanvas.h>
+#include <TStyle.h>
 
 void show_plots () {
 
@@ -23,18 +28,17 @@ void show_plots () {
     float max;
     float min;
 
-    min=convertBin(test_thresh, 0);
+    min=convertBin(test_thresh, 1);
     max=convertBin(test_thresh, 1024);
 
-    TH2F* thresholds_l = new TH2F ("th2_thresholds_l" , "thresholds_l" , 16 , 0 , 16 , 1024 , min , max);
-    TH2F* thresholds_r = new TH2F ("th2_thresholds_r" , "thresholds_r" , 16 , 0 , 16 , 1024 , min , max);
+    TH2F* thresholds_l = new TH2F ("th2_thresholds_l" , "thresholds l>r" , 16 , 0 , 16 , 1024 , min , max);
+    TH2F* thresholds_r = new TH2F ("th2_thresholds_r" , "thresholds r>l" , 16 , 0 , 16 , 1024 , min , max);
 
-    min=convertBin(test_offset, 0);
+    min=convertBin(test_offset, 1);
     max=convertBin(test_offset, 1024);
 
-    TH2F* offsets_l    = new TH2F ("th2_offsets_l"    , "offsets_l"    , 16 , 0 , 16 , 1024 , min , max);
-    TH2F* offsets_r    = new TH2F ("th2_offsets_r"    , "offsets_r"    , 16 , 0 , 16 , 1024 , min , max);
-
+    TH2F* offsets_l    = new TH2F ("th2_offsets_l"    , "offsets l>r"    , 16 , 0 , 16 , 1024 , min , max);
+    TH2F* offsets_r    = new TH2F ("th2_offsets_r"    , "offsets r>l"    , 16 , 0 , 16 , 1024 , min , max);
 
     TH2F* raws []      = {offsets_l_raw, offsets_r_raw, thresholds_l_raw, thresholds_r_raw};
     TH2F* converted [] = {offsets_l, offsets_r, thresholds_l, thresholds_r};
@@ -45,11 +49,10 @@ void show_plots () {
     for (int ibin=0;ibin<1024;ibin++) {
 
             int    strip     = istrip;
-            float  amplitude = ibin; // convertBin(iscan, ibin);
             float  errors    = raws[iscan*2+iside]->GetBinContent(istrip+1, ibin+1);
 
             converted[iscan*2+iside]->
-                SetBinContent(strip+1, amplitude+1, errors);
+                SetBinContent(strip+1, ibin+1, errors);
 
     } } } }
 
@@ -72,6 +75,10 @@ void show_plots () {
     TCanvas * c2 = new TCanvas ();
     c2->SetWindowSize(2400,1280);
     c2->Divide(8,2);
+
+    TCanvas * c3 = new TCanvas ();
+    c3->SetWindowSize(2400,1280);
+    c3->Divide(8,2);
 
     TCanvas * c1 = new TCanvas ();
     c1->SetWindowSize(1600,1024);
@@ -216,13 +223,25 @@ void show_plots () {
             gr->Draw("SAME, *A");
             gr-> SetMarkerStyle(3);
         }
+        else if (iscan==0 && iside==1) {
+            c3->cd(istrip+1);
+            gPad->DrawFrame(0,0, 300, 1.1);
+            gr->Draw("SAME, *A");
+            gr-> SetMarkerStyle(3);
+        }
 
         c1->cd(2*iscan+iside+1);
 
         TMarker * mark = new TMarker (0.5+double(istrip), val, 3);
 
-        if (fail)
-            mark->SetY (0);
+        TAxis *yaxis = h2->GetYaxis();
+        Double_t binCenter = yaxis->GetBinCenter(50);
+
+        if (fail) {
+            mark->SetY (-1 * binCenter);
+            mark->SetMarkerColor(kRed);
+            mark->SetMarkerSize(2);
+        }
 
         mark->Draw("SAME");
 

@@ -13,11 +13,12 @@ class histoWriter {
         _hfile (hfile)
 
     {
-        thresholds_l = new TH2F ("thresholds_l" , "thresholds_l" , 16 , 0 , 16 , 1024 , dac_start_thresh , dac_start_thresh+1024*dac_step_thresh);
-        thresholds_r = new TH2F ("thresholds_r" , "thresholds_r" , 16 , 0 , 16 , 1024 , dac_start_thresh , dac_start_thresh+1024*dac_step_thresh);
+                                //name            //title            //x  xmi xma//ybins  ymin               ymax                                 );
+        thresholds_l = new TH2F ("thresholds_l" , "thresholds l>r" , 16 , 0 , 16 , 1024 , dac_start_thresh , dac_start_thresh+1024*dac_step_thresh);
+        thresholds_r = new TH2F ("thresholds_r" , "thresholds r>l" , 16 , 0 , 16 , 1024 , dac_start_thresh , dac_start_thresh+1024*dac_step_thresh);
 
-        offsets_r    = new TH2F ("offsets_r"    , "offsets_r"    , 16 , 0 , 16 , 1024 , dac_start_offset , dac_start_offset+1024*dac_step_offset);
-        offsets_l    = new TH2F ("offsets_l"    , "offsets_l"    , 16 , 0 , 16 , 1024 , dac_start_offset , dac_start_offset+1024*dac_step_offset);
+        offsets_r    = new TH2F ("offsets_r"    , "offsets r>l"    , 16 , 0 , 16 , 1024 , dac_start_offset , dac_start_offset+1024*dac_step_offset);
+        offsets_l    = new TH2F ("offsets_l"    , "offsets l>r"    , 16 , 0 , 16 , 1024 , dac_start_offset , dac_start_offset+1024*dac_step_offset);
 
     }
 

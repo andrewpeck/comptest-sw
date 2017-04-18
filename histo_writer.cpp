@@ -140,8 +140,9 @@ void histoWriter::fillSummary (int scan, int strip, int side, float* data, int n
     for (int ibin=0;ibin<1024;ibin++) {
         float dac = start + ibin*step;
         h2->Fill(strip, dac, data[ibin]+0.0000000001); // add a tiny offset so that we don't draw as white
-        //h2->SetBinContent(strip+1, dac+1, data[ibin]+0.000000001);
+//        h2->SetBinContent(strip+1, dac+1, data[ibin]+0.000000001);
     }
 
     h2->Draw("COLZ");
+
 }

@@ -5,7 +5,7 @@
 
 static const int dac_start   = 20;
 static const int dac_step    = 1;
-static const int num_pulses  = 25;
+static const int num_pulses  = 10;
 static const int num_entries = 1024;
 
 static const int dac_start_thresh   = 60;
@@ -16,7 +16,7 @@ static const int dac_step_offset    = 2;
 
 static const float pulse_vref = 5.0;
 
-static const float shaping_scale_factor = 0.266;
+static const float shaping_scale_factor = 0.347;
 
 static const float attenuation_high  = 1./pow(10, 6.0/20); // 0.501
 static const float attenuation_med   = 1./pow(10,11.0/20); // 0.282

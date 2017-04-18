@@ -5,7 +5,7 @@
 void convertCounts (float* data, int num_entries, int full_scale) {
     // we read in error counts and we want to normalize that to the number of pulses, producing a sigmoid efficiency curve
     for (int i=0; i<num_entries; i++) {
-        data[i] = (data[i] / full_scale);
+        data[i] = (data[i] / float(full_scale));
     }
 }
 
@@ -15,30 +15,33 @@ float convertBin (int test, int bin) {
         uint16_t step;
 
         if (test==test_offset) {
-            start=dac_start_offset;
-            step=dac_step_offset;
+            start = dac_start_offset;
+            step  = dac_step_offset;
         }
         else {
-            start=dac_start_thresh;
-            step=dac_step_thresh;
+            start = dac_start_thresh;
+            step  = dac_step_thresh;
         }
 
-        uint16_t dac_value   = start + bin*step;
+        uint16_t dac_value = start + (bin-1)*step;
 
         float dac_millivolts = 1000. * pulse_vref * dac_value / 16383.;
         float pulse_voltage  = dac_millivolts * shaping_scale_factor;
 
+        //printf ("pulse=%f mv=%f dac=%i start=%i step=%i bin=%i\n", pulse_voltage, dac_millivolts, dac_value, start, step, bin);
 
         float  hi_amplitude = pulse_voltage * attenuation_high;
         float med_amplitude = pulse_voltage * attenuation_med;
         float low_amplitude = pulse_voltage * attenuation_low;
 
         if (test==test_thresh) {
+            //printf ("converting test=%i bin=%i to %f\n", test, bin, hi_amplitude);
             return hi_amplitude;
         }
 
         else if (test==test_offset) {
-            float amp = (med_amplitude - low_amplitude)/3.5;
+            float amp = (med_amplitude - low_amplitude)/3.5; // 3.5 = AC amplifier gain
+            //printf ("converting test=%i bin=%i to %f\n", test, bin, amp);
             return amp ; // 3.5==amp gain
         }
         else {

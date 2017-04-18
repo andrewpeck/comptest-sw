@@ -54,7 +54,7 @@ int main (int argc, char *argv[]) {
    //tcflush(fd, TCIOFLUSH); // clear buffer
 
 
-    //scanner.reset();
+    scanner.reset();
     sleep (2);
     scanner.flushController();
     scanner.flushController();
@@ -70,45 +70,21 @@ int main (int argc, char *argv[]) {
      //
      //-----------------------------------------------------------------------------------------------------------------
 
-     for (int iside = 0; iside < 2; iside++) {
-         for (int istrip = 0; istrip < 16; istrip ++) {
-             scanner.scanOffset(istrip, iside, dac_start_offset, dac_step_offset, num_pulses);
-             scanner.flushController();
+     for (int iscan=0; iscan <2; iscan++) {
+         for (int iside = 0; iside < 2; iside++) {
+             for (int istrip = 0; istrip < 16; istrip ++) {
 
-             for (int i=0; i<num_entries; i++) {
-                 amplitude[i] = dac_start_offset + dac_step_offset*i;
-             }
+                 if (iscan==test_offset) scanner.scanOffset(istrip, iside, dac_start_offset, dac_step_offset, num_pulses);
+                 else                    scanner.scanThresh(istrip, iside, dac_start_thresh, dac_step_thresh, num_pulses);
 
-             convertCounts(data, num_entries, num_pulses);
-//           convertAmplitudes(test_offset, dac_start, dac_step, amplitude, num_entries);
+                 scanner.flushController();
 
-             //writer.fill2DHistogram(test_offset, istrip, iside, data, amplitude);
-             writer.fillSummary (test_offset, istrip, iside, data);
-         }
-     }
+                 convertCounts(data, num_entries, num_pulses);
 
-     //------------------------------------------------------------------------------------------------------------------
-     //
-     //------------------------------------------------------------------------------------------------------------------
+                 writer.fillSummary (iscan, istrip, iside, data);
 
+     } } }
      scanner.flushController();
-     for (int iside = 0; iside < 2; iside++) {
-         for (int istrip = 0; istrip < 16; istrip ++) {
-             scanner.scanThresh(istrip, iside, dac_start_thresh, dac_step_thresh, num_pulses);
-             scanner.flushController();
-
-             for (int i=0; i<num_entries; i++) {
-                 amplitude[i] = dac_start_thresh + dac_step_thresh*i;
-             }
-
-             convertCounts(data, num_entries, num_pulses);
-//           convertAmplitudes(test_thresh, dac_start_thresh, dac_step, amplitude, num_entries);
-
-             //writer.fill2DHistogram(test_thresh, istrip, iside, data, amplitude);
-
-             writer.fillSummary (test_thresh, istrip, iside, data);
-         }
-     }
 
      //-----------------------------------------------------------------------------------------------------------------
      //
