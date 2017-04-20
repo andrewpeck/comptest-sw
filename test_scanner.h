@@ -4,6 +4,7 @@
 #include "rx_parser.h"
 #include "serial.h"
 #include "dict.h"
+#include "colors.h"
 
 #include <stdint.h>
 
@@ -21,6 +22,7 @@ class Scanner {
         int scanCurrent (int channel) ;
         int scanOffset (int strip, int side, int dac_start, int dac_step, int num_pulses);
         int scanThresh (int strip, int side, int dac_start, int dac_step, int num_pulses);
+        int scanTiming (int dac_counts);
         int checkParams (const Dict set_params);
         void flushController ();
         void reset ();
@@ -54,6 +56,18 @@ int Scanner<T>::scanCurrent (int channel) {
 }
 
 template <class T>
+int Scanner<T>::scanTiming (int dac_counts) {
+
+    Dict set_params;
+
+//    set_params ["CHANNEL"]       = channel;
+//    set_params ["STRIP"]       = channel;
+//    set_params ["TEST"]       = test_timing;
+
+    return scanGeneric(set_params);
+}
+
+template <class T>
 int Scanner<T>::scanGeneric (Dict test_params) {
     //printf("scanGeneric\n");
 
@@ -81,6 +95,10 @@ int Scanner<T>::scanGeneric (Dict test_params) {
         printf("\nsys  :: %s scan started on   chann=%02d curr=%s\n", testname_short[scan], channel, currents[channel]);
         sprintf(tx_buf, "%s %i\r\n", testname_short[scan], test_params["CHANNEL"]);
     }
+    else if (scan==test_timing) {
+        printf("\nsys  :: %s scan started on   strip=%02d side=%1d dac_start=%d\n", testname_short[scan], strip, side, dac_start);
+        sprintf(tx_buf, "%s %i\r\n", testname_short[scan], test_params["DAC_START"]);
+    }
 
     printf("%s\n", tx_buf);
     serial.tx(tx_buf, sizeof(tx_buf)/sizeof(tx_buf[0]));
@@ -93,8 +111,14 @@ int Scanner<T>::scanGeneric (Dict test_params) {
 
     read_params.clear();
 
-    int ireads = 3;
-    readController(ireads);
+    if (scan==0 || scan==1 || scan==2) {
+        int ireads = 3;
+        readController(ireads);
+    }
+    else { // read 8 lines of response data
+        int ireads = 8;
+        readController(ireads);
+    }
 
     for(auto& iter : test_params) {
         std::cout << "set   :: " << iter.first << " = " << iter.second << std::endl;

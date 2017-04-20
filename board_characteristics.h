@@ -5,13 +5,13 @@
 
 static const int dac_start   = 20;
 static const int dac_step    = 1;
-static const int num_pulses  = 10;
+static const int num_pulses  = 5;
 static const int num_entries = 1024;
 
-static const int dac_start_thresh   = 60;
+static const int dac_start_thresh   = 1;
 static const int dac_step_thresh    = 1;
 
-static const int dac_start_offset   = 20;
+static const int dac_start_offset   = 1;
 static const int dac_step_offset    = 2;
 
 static const float pulse_vref = 5.0;

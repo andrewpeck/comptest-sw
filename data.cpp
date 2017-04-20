@@ -40,7 +40,7 @@ float convertBin (int test, int bin) {
         }
 
         else if (test==test_offset) {
-            float amp = (med_amplitude - low_amplitude)/3.5; // 3.5 = AC amplifier gain
+            float amp = (med_amplitude - low_amplitude); // 3.5 = AC amplifier gain
             //printf ("converting test=%i bin=%i to %f\n", test, bin, amp);
             return amp ; // 3.5==amp gain
         }
