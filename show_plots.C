@@ -10,17 +10,53 @@
 #include <TCanvas.h>
 #include <TStyle.h>
 #include "HistGetter.h"
+#include <TSystem.h>
 
-#define FITS 1
+// #define FITS 1
                   //int argc, char* argv []
 void show_plots (std::string name="def") {
 
     TFile* hfile = new TFile("tmp.root","READ","TMB Queue Model");
 
+    //------------------------------------------------------------------------------------------------------------------
+    // Currents
+    //------------------------------------------------------------------------------------------------------------------
+
+    TCanvas * currents = new TCanvas ();
+    currents->SetWindowSize(2400,1280);
+    currents->Divide(3,2);
+
+
+    TH1F* iamp = (TH1F*) hfile -> Get ("iamp");
+    TH1F* ioff = (TH1F*) hfile -> Get ("ioff");
+    TH1F* ibias = (TH1F*) hfile -> Get ("ibias");
+    TH1F* i5v0 = (TH1F*) hfile -> Get ("i5v0");
+    TH1F* i3v3 = (TH1F*) hfile -> Get ("i3v3");
+
+    currents->cd(1);
+    iamp->Draw();
+    currents->cd(2);
+    ioff->Draw();
+    currents->cd(3);
+    ibias->Draw();
+    currents->cd(4);
+    i5v0->Draw();
+    currents->cd(5);
+    i3v3->Draw();
+
+    currents->Update();
+
+    gSystem->ProcessEvents();
+
+    //------------------------------------------------------------------------------------------------------------------
+    //
+    //------------------------------------------------------------------------------------------------------------------
+
     TH2F* thresholds_l_raw = (TH2F*) hfile -> Get ("thresholds_l");
     TH2F* thresholds_r_raw = (TH2F*) hfile -> Get ("thresholds_r");
     TH2F* offsets_l_raw    = (TH2F*) hfile -> Get ("offsets_l");
     TH2F* offsets_r_raw    = (TH2F*) hfile -> Get ("offsets_r");
+    TH2F* h2_timing        = (TH2F*) hfile -> Get ("h2_timing");
 
     //hfile->Close();
 
@@ -174,11 +210,11 @@ void show_plots (std::string name="def") {
 
     TCanvas * c1 = new TCanvas ();
     c1->SetWindowSize(1600,1024);
-    c1->Divide(4,2);
+    c1->Divide(5,2);
     c1->cd();
 
 
-    gStyle->SetPalette(1);
+    //gStyle->SetPalette(1);
 
     c1->cd(1);
     offsets_l->Draw("COLZ");
@@ -195,6 +231,10 @@ void show_plots (std::string name="def") {
     c1->cd(4);
     thresholds_r->Draw("COLZ");
     thresholds_r->SetContour(100);
+
+    c1->cd(5);
+    h2_timing->Draw("COLZ");
+
     c1->Modified();
     c1->Update();
 
@@ -395,7 +435,7 @@ void show_plots (std::string name="def") {
 
     }
 
-    c1->cd (5+2*iscan+iside);
+    c1->cd (6+2*iscan+iside);
     h1->Draw();
     gSystem->ProcessEvents();
 
@@ -403,4 +443,6 @@ void show_plots (std::string name="def") {
     }
 
     c1->cd();
+
+
 }

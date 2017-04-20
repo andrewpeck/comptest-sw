@@ -5,6 +5,7 @@
 
 #include "test_enums.h"
 #include "dict.h"
+#include <vector>
 
 template <class T>
 class Parser {
@@ -19,12 +20,15 @@ class Parser {
         void parseBinaryLine (const std::string *line);
         void parseDataLine (const std::string *dataline);
         void parseDataField (const std::string *fieldline);
+        std::vector<uint8_t>*  getDeltas();
 
+        void parseTimeLine (const std::string* dataline);
     private:
 
         Dict* _params;
         T* _data;
         char* read_data;
+        std::vector<uint8_t> deltas [8];
 
 };
 
@@ -36,7 +40,11 @@ class Parser {
 template <class T>
 void Parser<T>::parseDataField (const std::string* fieldline) {
 
-    //std::cout << *fieldline << std::endl;
+    //------------------------------------------------------------------------------------------------------------------
+    const bool debug=0;
+    //------------------------------------------------------------------------------------------------------------------
+
+    if (debug) std::cout << "fieldline: " << *fieldline << std::endl;
 
     int value = -1;
 
@@ -45,8 +53,10 @@ void Parser<T>::parseDataField (const std::string* fieldline) {
 
     Dict test_types;
 
-    test_types ["OFFSET"] = test_offset;
-    test_types ["THRESH"] = test_thresh;
+    test_types ["TIMING"]    = test_timing;
+    test_types ["MODE"]    = test_mode;
+    test_types ["OFFSET"]  = test_offset;
+    test_types ["THRESH"]  = test_thresh;
     test_types ["CURRENT"] = test_currents;
 
     std::string field;
@@ -54,24 +64,28 @@ void Parser<T>::parseDataField (const std::string* fieldline) {
     int i = 0;
 
     for (const auto& token : tokens) {
-        if (i==0)
+        if (i==0) {
             field = token;
+        }
         else if (i== 1) {
+
             if (field=="TEST")
                 value = test_types[token];
             else
                 value = strtol(token.c_str(), NULL, 10);
+
         }
         i++;
     }
 
+    if (debug) std::cout << "    field = " << field << "  value = " << value << std::endl;
     (*_params) [field] = value;
 }
 
 template <class T>
 void Parser<T>::parseDataLine (const std::string* dataline)
 {
-    //std::cout << *dataline << std::endl;
+  //std::cout << *dataline << std::endl;
     boost::char_separator<char> sep(" ");
     boost::tokenizer<boost::char_separator<char>> tokens(*dataline, sep);
 
@@ -81,10 +95,53 @@ void Parser<T>::parseDataLine (const std::string* dataline)
     }
 }
 
+template <class T>
+void Parser<T>::parseTimeLine (const std::string* dataline)
+{
+    const bool debug = 1;
+
+    if (debug) std::cout << "parseTimeLine" << std::endl;
+    if (debug) std::cout << *dataline << std::endl;
+
+    boost::char_separator<char> sep(" ");
+    boost::tokenizer<boost::char_separator<char>> tokens(*dataline, sep);
+
+    uint8_t time=0;
+
+    int i = 0;
+    for (const auto& token : tokens) {
+
+        if (i==0) {
+
+            i++;
+
+            const std::string* field = &token;
+            parseDataField(field);
+
+            time = (*_params)["pktime"];
+
+            if (debug) printf ("pktime=%i ", time);
+
+            deltas[time].clear();
+
+        }
+        else {
+            uint16_t value = strtol(token.c_str(), NULL, 10);
+            deltas[time].push_back(value);
+
+            if (debug) printf (" %2i ", deltas[time].back());
+        }
+    }
+
+    printf("\n");
+
+}
+
 
 template <class T>
 void Parser<T>::parseBinaryLine (const std::string *line)
 {
+    // parse line of data, taking each 4 hex characters as a 16 bit number
     for (int i=0; i<line->length()/4; i++) {
         uint16_t data = strtol (line->substr(i*4,4).c_str(), NULL, 16);
         _data [i] = (T) data;
@@ -97,8 +154,7 @@ void Parser<T>::parseBinaryLine (const std::string *line)
 template <class T>
 void Parser<T>::parseBuffer (char* buffer, int size) {
 
-    //std::cout << buffer << std::endl;
-
+    // cut the first 6 characters from the string as the header e.g. "DATA::"
     std::string msg_type (buffer,6);
     std::string msg      (buffer+6);
 
@@ -116,6 +172,17 @@ void Parser<T>::parseBuffer (char* buffer, int size) {
       //  std::cout << msg << std::endl;
         parseBinaryLine (&msg);
     }
+    else if ("TIME::"==msg_type) {
+        //std::cout << "time :: ";
+        //std::cout << msg << std::endl;
+        parseTimeLine (&msg);
+    }
+}
+
+template <class T>
+std::vector<uint8_t>*  Parser<T>::getDeltas()
+{
+    return deltas;
 }
 
 #endif /* RX_PARSER_H */

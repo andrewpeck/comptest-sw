@@ -24,7 +24,8 @@
 
 #include "data.cpp"
 
-int main (int argc, char *argv[]) {
+
+void test_controller  (std::string modem= "/dev/cu.usbmodem401341") {
 
     float data [1024];
     float amplitude [1024];
@@ -43,11 +44,7 @@ int main (int argc, char *argv[]) {
 
     histoWriter writer(hfile);
 
-    std::string ttyname = "/dev/cu.usbmodem401341";
-    if (argc>1) {
-        ttyname = argv[1];
-    }
-    int fd = open (ttyname.c_str(), O_RDWR | O_NOCTTY | O_SYNC);
+    int fd = open (modem.c_str(), O_RDWR | O_NOCTTY | O_SYNC);
 
     scanner.setSerialFd (fd);
 
@@ -86,22 +83,54 @@ int main (int argc, char *argv[]) {
      } } }
      scanner.flushController();
 
+     for (int istrip=0; istrip<15; istrip++) {
+         for (int iside = 0; iside < 2; iside++) {
+     std::vector<uint8_t>* deltas = scanner.scanTiming(1000, 5, istrip, iside);
+
+     for (int pktime=0; pktime<8; pktime++) {
+
+         printf("pktime=%i", pktime);
+         printf("size=%i", deltas[pktime].size() );
+
+         for(uint16_t time : deltas[pktime]) {
+         //for(int i=0; i<5; i++) {
+             //uint16_t time = deltas[pktime][i];
+             printf(" %i ", time);
+             writer.fillTiming(pktime, time);
+         }
+         printf("\n");
+
+     }
+     }}
+
+
+
      //-----------------------------------------------------------------------------------------------------------------
      //
      //-----------------------------------------------------------------------------------------------------------------
 
-//  for (int ichannel = 0; ichannel < 6; ichannel++) {
-//      scanner.scanCurrent(ichannel);
-//      //convertCurrents(data, num_entries, ichannel);
-//      writer.fill1DHistogram(test_currents, ichannel, data);
-//      scanner.flushController();
-//  }
+    for (int ichannel = 0; ichannel < 6; ichannel++) {
+        scanner.scanCurrent(ichannel);
+        convertCurrents(data, num_entries, ichannel);
+        writer.fill1DHistogram(test_currents, ichannel, data);
+        scanner.flushController();
+    }
 
  // for(auto& iter : params) {
  //     std::cout << "data :: " << iter.first << " = " << iter.second << std::endl;
  // }
 
+    hfile->Write();
     close (fd);
+}
 
-    return 1;
+int main (int argc, char *argv[]) {
+
+    std::string modem = "/dev/cu.usbmodem401341";
+    if (argc>1) {
+        modem = argv[1];
+    }
+
+    test_controller(modem);
+
 }

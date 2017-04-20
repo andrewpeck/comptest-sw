@@ -22,7 +22,7 @@ class Scanner {
         int scanCurrent (int channel) ;
         int scanOffset (int strip, int side, int dac_start, int dac_step, int num_pulses);
         int scanThresh (int strip, int side, int dac_start, int dac_step, int num_pulses);
-        int scanTiming (int dac_counts);
+        std::vector<uint8_t>* scanTiming (int dac_counts, int num_pulses, int strip, int side);
         int checkParams (const Dict set_params);
         void flushController ();
         void reset ();
@@ -48,29 +48,32 @@ int Scanner<T>::scanCurrent (int channel) {
 
     Dict set_params;
 
-    set_params ["CHANNEL"]       = channel;
-    set_params ["STRIP"]       = channel;
-    set_params ["TEST"]       = test_currents;
+    set_params ["CHANNEL"] = channel;
+    set_params ["STRIP"]   = channel;
+    set_params ["TEST"]    = test_currents;
 
     return scanGeneric(set_params);
 }
 
 template <class T>
-int Scanner<T>::scanTiming (int dac_counts) {
+std::vector<uint8_t>* Scanner<T>::scanTiming (int dac_counts, int num_pulses, int strip, int side) {
 
     Dict set_params;
 
-//    set_params ["CHANNEL"]       = channel;
-//    set_params ["STRIP"]       = channel;
-//    set_params ["TEST"]       = test_timing;
+    set_params ["DAC_START"]  = dac_counts;
+    set_params ["NUM_PULSES"] = num_pulses;
+    set_params ["STRIP"]      = strip;
+    set_params ["SIDE"]       = side;
+    set_params ["TEST"]       = test_timing;
 
-    return scanGeneric(set_params);
+    scanGeneric(set_params);
+    return parser.getDeltas();
 }
 
 template <class T>
 int Scanner<T>::scanGeneric (Dict test_params) {
-    //printf("scanGeneric\n");
 
+    bool debug = 0;
 
     int scan = test_params["TEST"];
 
@@ -97,7 +100,7 @@ int Scanner<T>::scanGeneric (Dict test_params) {
     }
     else if (scan==test_timing) {
         printf("\nsys  :: %s scan started on   strip=%02d side=%1d dac_start=%d\n", testname_short[scan], strip, side, dac_start);
-        sprintf(tx_buf, "%s %i\r\n", testname_short[scan], test_params["DAC_START"]);
+        sprintf(tx_buf, "%s %i %i %i %i\r\n", testname_short[scan], dac_start, num_pulses, strip, side);
     }
 
     printf("%s\n", tx_buf);
@@ -109,23 +112,31 @@ int Scanner<T>::scanGeneric (Dict test_params) {
     // iread=4. info
     // iread=5. info
 
+
     read_params.clear();
 
-    if (scan==0 || scan==1 || scan==2) {
-        int ireads = 3;
-        readController(ireads);
+    int ireads=0;
+    if (scan==test_offset || scan==test_thresh || scan==test_currents) {
+        ireads = 3;
     }
-    else { // read 8 lines of response data
-        int ireads = 8;
-        readController(ireads);
-    }
-
-    for(auto& iter : test_params) {
-        std::cout << "set   :: " << iter.first << " = " << iter.second << std::endl;
+    else if (scan==test_timing) { // read 8 lines of response data + 1 header + 1 trailer
+        ireads = 10;
     }
 
-    for(auto& iter : read_params) {
-        std::cout << "read   :: " << iter.first << " = " << iter.second << std::endl;
+    readController(ireads);
+
+    //------------------------------------------------------------------------------------------------------------------
+    //
+    //------------------------------------------------------------------------------------------------------------------
+
+    if (debug) {
+        for(auto& iter : test_params) {
+            std::cout << "set   :: " << iter.first << " = " << iter.second << std::endl;
+        }
+
+        for(auto& iter : read_params) {
+            std::cout << "read   :: " << iter.first << " = " << iter.second << std::endl;
+        }
     }
 
     auto retval = checkParams (test_params);
@@ -249,15 +260,16 @@ template <class T>
 int Scanner<T>::readController (int ireads)
 {
 
-    // debug printf("readController");
+    printf("readController\n");
     int nth_read = 0;
     while (nth_read<ireads) {
+
         int n = serial.rx();
 
         if (n>0) {
             nth_read++;
             // debug
-            printf("%s\n", _rx_buf);
+            //printf("%s\n", _rx_buf);
             parser.parseBuffer(_rx_buf, n);
         }
 

@@ -14,7 +14,7 @@ int Serial::rx ()
     char rx_char [1];
     int rx_buf_index = 0;
     int iframe = 0;
-    // memset(rx_buf, 0, sizeof(rx_buf));
+    memset(_rx_buf, 0, sizeof(_rx_buf[0]));
 
     int n = 0;
     while(iframe < max_packet_length) {

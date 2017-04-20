@@ -22,8 +22,8 @@ void histoWriter::fill1DHistogram (int scan, int channel, float* data_x, int n_e
     char *name;
     char *title;
 
-    asprintf(&name, "%s_%s", testname[scan], currents[channel]);
-    asprintf(&title,"%s %s", testname[scan], currents[channel]);
+    asprintf(&name, "%s", currents[channel]);
+    asprintf(&title,"Current %s", currents[channel]);
 
     std::cout << "Generating histo for " << name << "    Title=" << title << std::endl;
 
@@ -145,4 +145,16 @@ void histoWriter::fillSummary (int scan, int strip, int side, float* data, int n
 
     h2->Draw("COLZ");
 
+}
+
+void histoWriter::fillTiming (int pktime, int delta) {
+
+    TH2F* h2 = h2_timing;
+
+    uint16_t start;
+    uint16_t step;
+
+    h2->Fill(pktime, delta); // add a tiny offset so that we don't draw as white
+
+    h2->Draw("COLZ");
 }

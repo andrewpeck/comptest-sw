@@ -20,6 +20,7 @@ class histoWriter {
         offsets_r    = new TH2F ("offsets_r"    , "offsets r>l"    , 16 , 0 , 16 , 1024 , dac_start_offset , dac_start_offset+1024*dac_step_offset);
         offsets_l    = new TH2F ("offsets_l"    , "offsets l>r"    , 16 , 0 , 16 , 1024 , dac_start_offset , dac_start_offset+1024*dac_step_offset);
 
+        h2_timing    = new TH2F ("h2_timing"    , "pktime response", 8 , 0 , 8 , 50 , 0 , 50);
     }
 
 
@@ -34,10 +35,13 @@ class histoWriter {
 
     void fillSummary  (int scan, int strip, int side, float* data, int n_entries=1024);
 
+    void fillTiming  (int pktime, int delta);
+
     TH2F* thresholds_l;
     TH2F* thresholds_r;
     TH2F* offsets_l;
     TH2F* offsets_r;
+    TH2F* h2_timing;
 
 
     private:
