@@ -5,7 +5,7 @@
 
 static const int dac_start   = 20;
 static const int dac_step    = 1;
-static const int num_pulses  = 5;
+static const int num_pulses  = 2;
 static const int num_entries = 1024;
 
 static const int dac_start_thresh   = 1;

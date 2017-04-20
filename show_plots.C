@@ -12,18 +12,24 @@
 #include "HistGetter.h"
 #include <TSystem.h>
 
-// #define FITS 1
+#define FITS 1
                   //int argc, char* argv []
 void show_plots (std::string name="def") {
 
     TFile* hfile = new TFile("tmp.root","READ","TMB Queue Model");
+
+    TCanvas * c1 = new TCanvas ();
+    c1->SetWindowSize(1600,1024);
+    c1->Divide(5,2);
+    c1->cd();
+
 
     //------------------------------------------------------------------------------------------------------------------
     // Currents
     //------------------------------------------------------------------------------------------------------------------
 
     TCanvas * currents = new TCanvas ();
-    currents->SetWindowSize(2400,1280);
+    currents->SetWindowSize(1200,800);
     currents->Divide(3,2);
 
 
@@ -46,6 +52,24 @@ void show_plots (std::string name="def") {
 
     currents->Update();
 
+    gSystem->ProcessEvents();
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Compin
+    //------------------------------------------------------------------------------------------------------------------
+
+    c1->cd (10);
+
+    TH2F* compin = (TH2F*) hfile -> Get ("h2_compin");
+    compin->GetXaxis()->SetBinLabel(1 , "left");
+    compin->GetXaxis()->SetBinLabel(2 , "right");
+
+    //gStyle->SetOptStat(0);
+
+    compin->GetZaxis()->SetRangeUser(0, 1); // ... set the range ...
+    compin->Draw("COLZ");
+
+    c1->Update();
     gSystem->ProcessEvents();
 
     //------------------------------------------------------------------------------------------------------------------
@@ -208,13 +232,8 @@ void show_plots (std::string name="def") {
     c5->Divide(8,2);
 #endif
 
-    TCanvas * c1 = new TCanvas ();
-    c1->SetWindowSize(1600,1024);
-    c1->Divide(5,2);
-    c1->cd();
 
-
-    //gStyle->SetPalette(1);
+    gStyle->SetPalette(1);
 
     c1->cd(1);
     offsets_l->Draw("COLZ");

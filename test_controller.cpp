@@ -27,13 +27,13 @@
 
 void test_controller  (std::string modem= "/dev/cu.usbmodem401341") {
 
-    float data [1024];
+    float data_buf [1024];
     float amplitude [1024];
     for (int i=0; i<1024; i++) {
         amplitude[i] = i;
     }
 
-    Scanner <float> scanner(data);
+    Scanner <float> scanner(data_buf);
 
     //std::string filename = now();         // returns current date+time as string
     std::string filename = "tmp.root";
@@ -64,7 +64,7 @@ void test_controller  (std::string modem= "/dev/cu.usbmodem401341") {
      tcflush(fd, TCIOFLUSH); // clear buffer
 
      //-----------------------------------------------------------------------------------------------------------------
-     //
+     // Offsets + Thresholds
      //-----------------------------------------------------------------------------------------------------------------
 
      for (int iscan=0; iscan <2; iscan++) {
@@ -76,43 +76,65 @@ void test_controller  (std::string modem= "/dev/cu.usbmodem401341") {
 
                  scanner.flushController();
 
-                 convertCounts(data, num_entries, num_pulses);
+                 convertCounts(data_buf, num_entries, num_pulses);
 
-                 writer.fillSummary (iscan, istrip, iside, data);
+                 writer.fillSummary (iscan, istrip, iside, data_buf, num_entries);
 
      } } }
+
      scanner.flushController();
 
-     for (int istrip=0; istrip<15; istrip++) {
-         for (int iside = 0; iside < 2; iside++) {
-     std::vector<uint8_t>* deltas = scanner.scanTiming(1000, 5, istrip, iside);
+     //-----------------------------------------------------------------------------------------------------------------
+     // Compin
+     //-----------------------------------------------------------------------------------------------------------------
 
-     for (int pktime=0; pktime<8; pktime++) {
+     scanner.init();
+     scanner.setCompin(1);
+     scanner.flushController();
 
-         printf("pktime=%i", pktime);
-         printf("size=%i", deltas[pktime].size() );
+     for (int iside = 0; iside < 2; iside++) {
 
-         for(uint16_t time : deltas[pktime]) {
-         //for(int i=0; i<5; i++) {
-             //uint16_t time = deltas[pktime][i];
-             printf(" %i ", time);
-             writer.fillTiming(pktime, time);
-         }
-         printf("\n");
+         int istrip = 0;
+
+         scanner.scanThresh(istrip, iside, dac_start_thresh, dac_step_thresh, num_pulses);
+
+         scanner.flushController();
+
+         convertCounts(data_buf, num_entries, num_pulses);
+
+         writer.fillSummary (test_compin, istrip, iside, data_buf, num_entries);
 
      }
-     }}
-
+     scanner.flushController();
 
 
      //-----------------------------------------------------------------------------------------------------------------
-     //
+     // Timing Scan
+     //-----------------------------------------------------------------------------------------------------------------
+
+     for (int istrip=0; istrip<15; istrip++) {
+         for (int iside = 0; iside < 2; iside++) {
+             std::vector<uint8_t>* deltas = scanner.scanTiming(1000, 5, istrip, iside);
+             for (int pktime=0; pktime<8; pktime++) {
+                 for(uint16_t time : deltas[pktime]) {
+                     writer.fillTiming(pktime, time);
+                 }
+             }
+     }}
+
+
+     //-----------------------------------------------------------------------------------------------------------------
+     // Compout
+     //-----------------------------------------------------------------------------------------------------------------
+
+     //-----------------------------------------------------------------------------------------------------------------
+     // Currents
      //-----------------------------------------------------------------------------------------------------------------
 
     for (int ichannel = 0; ichannel < 6; ichannel++) {
         scanner.scanCurrent(ichannel);
-        convertCurrents(data, num_entries, ichannel);
-        writer.fill1DHistogram(test_currents, ichannel, data);
+        convertCurrents(data_buf, num_entries, ichannel);
+        writer.fill1DHistogram(test_currents, ichannel, data_buf);
         scanner.flushController();
     }
 

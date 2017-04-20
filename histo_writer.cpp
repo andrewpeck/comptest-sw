@@ -90,23 +90,9 @@ void histoWriter::fill2DHistogram (int scan, int strip, int side, float* data_x,
     f2->SetParameter(1, f1->GetParameter(1));
     f2->SetParameter(2, f1->GetParameter(2));
 
-    //f2->Write();
     delete f2;
-
     delete f1;
     delete gr;
-
-//    for (int i=0;i<1024;i++) {
-//        h2->Fill(data_y[i], data_x[i]);
-//    }
-//
-//    h2 -> GetXaxis()->SetTitle("mV");
-//    h2 -> GetYaxis()->SetTitle("error rate");
-//
-//    h2 -> SetMarkerStyle (2);
-//
-//    h2->Draw("COLZ");
-
 }
 
 
@@ -126,8 +112,7 @@ void histoWriter::fillSummary (int scan, int strip, int side, float* data, int n
         else
             h2=thresholds_r;
     }
-    else {
-
+    else if (scan==test_offset) {
         start=dac_start_offset;
         step=dac_step_offset;
 
@@ -136,25 +121,24 @@ void histoWriter::fillSummary (int scan, int strip, int side, float* data, int n
         else
             h2=offsets_r;
     }
-
-    for (int ibin=0;ibin<1024;ibin++) {
-        float dac = start + ibin*step;
-        h2->Fill(strip, dac, data[ibin]+0.0000000001); // add a tiny offset so that we don't draw as white
-//        h2->SetBinContent(strip+1, dac+1, data[ibin]+0.000000001);
+    else if (scan==test_compin) {
+        start=dac_start_thresh;
+        step=dac_step_thresh;
+        h2=h2_compin;
     }
 
-    h2->Draw("COLZ");
+    for (int ibin=0;ibin<n_entries;ibin++) {
 
+        float dac = start + ibin*step;
+
+        if (scan==test_compin) h2->Fill(side, dac, 1-data[ibin]+1e-9); // add a tiny offset so that we don't draw as white
+        else h2->Fill(strip, dac, data[ibin]+0.0000000001); // add a tiny offset so that we don't draw as white
+
+      //h2->SetBinContent(strip+1, dac+1, data[ibin]+0.000000001);
+    }
 }
 
 void histoWriter::fillTiming (int pktime, int delta) {
-
     TH2F* h2 = h2_timing;
-
-    uint16_t start;
-    uint16_t step;
-
     h2->Fill(pktime, delta); // add a tiny offset so that we don't draw as white
-
-    h2->Draw("COLZ");
 }

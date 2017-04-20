@@ -1,7 +1,7 @@
 #ifndef TEST_ENUMS_H
 #define TEST_ENUMS_H
 
-enum {test_offset, test_thresh, test_currents, test_timing, test_mode};
+enum {test_offset, test_thresh, test_currents, test_timing, test_mode, test_compin};
 
 static const char* testname       [] = {"Offset", "Threshold", "Current", "Timing"};
 static const char* testname_short [] = {"offset", "thresh", "current", "timing"};

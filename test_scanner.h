@@ -26,6 +26,8 @@ class Scanner {
         int checkParams (const Dict set_params);
         void flushController ();
         void reset ();
+        void init ();
+        void setCompin (bool compin);
 
         inline void setSerialFd (int fd) { serial.setFd(fd); };
 
@@ -289,6 +291,21 @@ void Scanner<T>::reset ()
 {
     char msg [] = "reset\r\n";
     serial.tx(msg, 7);
+}
+
+template <class T>
+void Scanner<T>::init ()
+{
+    char msg [] = "init\r\n";
+    serial.tx(msg, 6);
+}
+
+template <class T>
+void Scanner<T>::setCompin (bool compin)
+{
+    char msg [] = "compin 0\r\n";
+    sprintf(msg, "compin %1i\r\n", compin);
+    serial.tx(msg, 10);
 }
 
 #endif /* TEST_SCANNER_H */
