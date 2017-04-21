@@ -1,6 +1,9 @@
 #include "test_enums.h"
 #include "board_characteristics.h"
 #include <stdint.h>
+#include <TMath.h>
+
+#include "data.h"
 
 void convertCounts (float* data, int num_entries, int full_scale) {
     // we read in error counts and we want to normalize that to the number of pulses, producing a sigmoid efficiency curve
@@ -76,7 +79,7 @@ void convertAmplitudes (int test, int dac_start, int dac_step, float* amplitude,
 
 
 float convertIfamp (float voltage) {
-        return ( (5.0 - voltage)/r_ifamp);
+        return ( TMath::Abs(5.0 - voltage)/r_ifamp);
 }
 
 float convertIbias (float voltage) {
@@ -84,11 +87,11 @@ float convertIbias (float voltage) {
 }
 
 float convertIoff (float voltage) {
-        return ( (5.0 - voltage)/r_ioff);
+        return ( TMath::Abs(5.0 - voltage)/r_ioff);
 }
 
 float convertIamp (float voltage) {
-        return ( (5.0 - voltage)/r_iamp);
+        return ( TMath::Abs(5.0 - voltage)/r_iamp);
 }
 
 float convert3v3  (float voltage) {
@@ -102,24 +105,17 @@ float convert5v0  (float voltage) {
 // create indexable array of conversion functions
 float (*conversion_functions [] ) (float data) = {convertIfamp, convertIamp, convertIoff, convertIbias, convert5v0, convert3v3};
 
+float convertCurrents (float data, int channel) {
+
+    float volts = data * 3.3/16383;
+    return current_scale[channel] *  conversion_functions[channel](volts);
+
+}
+
 void convertCurrents (float* data, int num_entries, int channel) {
-
-    // need to scale to 1000 or 1000000 depending on uV vs. mV
-    float scale_factor = 1;
-
-    if (strcmp(current_units[channel], "mA")==0) {
-        scale_factor=1000;
-    }
-    else if (strcmp(current_units[channel], "uA")==0) {
-        scale_factor=1000000;
-    }
-
-    // use correct conversion function
-    float (*func ) (float data) = (conversion_functions[channel]);
-
     for (int i=0; i<num_entries; i++) {
-        float volts = data[i] * 3.3;
-        data[i] = scale_factor *  (*func) (volts);
+        data[i] = convertCurrents(data[i], channel);
     }
 
 }
+

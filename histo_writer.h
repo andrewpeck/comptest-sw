@@ -20,9 +20,9 @@ class histoWriter {
         offsets_r    = new TH2F ("offsets_r"    , "offsets r>l"    , 16 , 0 , 16 , 1024 , dac_start_offset , dac_start_offset+1024*dac_step_offset);
         offsets_l    = new TH2F ("offsets_l"    , "offsets l>r"    , 16 , 0 , 16 , 1024 , dac_start_offset , dac_start_offset+1024*dac_step_offset);
 
-        h2_timing    = new TH2F ("h2_timing"    , "pktime response", 8 , 0 , 8 , 25 , 0 , 25);
-
-        h2_compin    = new TH2F ("h2_compin"    , "compin effect",   2 , 0 , 2 , 1024 , dac_start_thresh , dac_start_thresh+1024*dac_step_thresh);
+        h2_compout = new TH2F ("h2_compout"   , "compout response"    ,2 , 0 , 2 , 1024 , dac_start_thresh , dac_start_thresh+1024*dac_step_thresh);
+        h2_timing  = new TH2F ("h2_timing"    , "pktime response", 8 , 0 , 8 , 25 , 0 , 25);
+        h2_compin  = new TH2F ("h2_compin"    , "compin response",   2 , 0 , 2 , 1024 , dac_start_thresh , dac_start_thresh+1024*dac_step_thresh);
     }
 
 
@@ -45,10 +45,11 @@ class histoWriter {
     TH2F* offsets_r;
     TH2F* h2_timing;
     TH2F* h2_compin;
-
+    TH2F* h2_compout;
 
     private:
     TFile * _hfile;
+    TH2F* getH2 (int scan, int strip, int side);
 
 };
 

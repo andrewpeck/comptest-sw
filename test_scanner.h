@@ -5,6 +5,7 @@
 #include "serial.h"
 #include "dict.h"
 #include "colors.h"
+#include <TString.h>
 
 #include <stdint.h>
 
@@ -22,6 +23,7 @@ class Scanner {
         int scanCurrent (int channel) ;
         int scanOffset (int strip, int side, int dac_start, int dac_step, int num_pulses);
         int scanThresh (int strip, int side, int dac_start, int dac_step, int num_pulses);
+        int scanCompout (int strip, int side, int dac_start, int dac_step, int num_pulses);
         std::vector<uint8_t>* scanTiming (int dac_counts, int num_pulses, int strip, int side);
         int checkParams (const Dict set_params);
         void flushController ();
@@ -91,21 +93,27 @@ int Scanner<T>::scanGeneric (Dict test_params) {
 
     if (scan==test_thresh || scan==test_offset) {
 
-        printf("\nsys  :: %ss scan started on   strip=%02d side=%1d dac_start=%d dac_step=%d num_pulses = %d\n",
+        if (debug) printf("\nsys  :: %ss scan started on   strip=%02d side=%1d dac_start=%d dac_step=%d num_pulses = %d\n",
+                testname_short[scan], strip, side, dac_start, dac_step, num_pulses);
+
+        sprintf(tx_buf, "%s %i %i %i %i %i\r\n", testname_short[scan], strip, side, dac_start, dac_step, num_pulses);
+    }
+    else if (scan==test_compout) {
+        if (debug) printf("\nsys  :: %ss scan started on   strip=%02d side=%1d dac_start=%d dac_step=%d num_pulses = %d\n",
                 testname_short[scan], strip, side, dac_start, dac_step, num_pulses);
 
         sprintf(tx_buf, "%s %i %i %i %i %i\r\n", testname_short[scan], strip, side, dac_start, dac_step, num_pulses);
     }
     else if (scan==test_currents) {
-        printf("\nsys  :: %s scan started on   chann=%02d curr=%s\n", testname_short[scan], channel, currents[channel]);
+        if (debug) printf("\nsys  :: %s scan started on   chann=%02d curr=%s\n", testname_short[scan], channel, currents[channel]);
         sprintf(tx_buf, "%s %i\r\n", testname_short[scan], test_params["CHANNEL"]);
     }
     else if (scan==test_timing) {
-        printf("\nsys  :: %s scan started on   strip=%02d side=%1d dac_start=%d\n", testname_short[scan], strip, side, dac_start);
+        if (debug) printf("\nsys  :: %s scan started on   strip=%02d side=%1d dac_start=%d\n", testname_short[scan], strip, side, dac_start);
         sprintf(tx_buf, "%s %i %i %i %i\r\n", testname_short[scan], dac_start, num_pulses, strip, side);
     }
 
-    printf("%s\n", tx_buf);
+    if (debug) printf("%s\n", tx_buf);
     serial.tx(tx_buf, sizeof(tx_buf)/sizeof(tx_buf[0]));
 
     // iread=1. read in parameters line
@@ -118,11 +126,14 @@ int Scanner<T>::scanGeneric (Dict test_params) {
     read_params.clear();
 
     int ireads=0;
-    if (scan==test_offset || scan==test_thresh || scan==test_currents) {
+    if (scan==test_timing) { // read 8 lines of response data + 1 header + 1 trailer
+        ireads = 10;
+    }
+    else if (scan==test_offset || scan==test_thresh || scan==test_currents || scan==test_compout) {
         ireads = 3;
     }
-    else if (scan==test_timing) { // read 8 lines of response data + 1 header + 1 trailer
-        ireads = 10;
+    else {
+        throw std::invalid_argument(TString::Format("You are running scan generic without specifying n_readss"));
     }
 
     readController(ireads);
@@ -172,6 +183,21 @@ int Scanner<T>::scanOffset (int strip, int side, int dac_start, int dac_step, in
     Dict set_params;
 
     set_params ["TEST"]        = test_offset;
+    set_params ["STRIP"]       = strip;
+    set_params ["SIDE"]        = side;
+    set_params ["DAC_START" ]  = dac_start;
+    set_params ["DAC_STEP" ]   = dac_step;
+    set_params ["NUM_PULSES" ] = num_pulses;
+
+    return scanGeneric(set_params);
+}
+
+template <class T>
+int Scanner<T>::scanCompout (int strip, int side, int dac_start, int dac_step, int num_pulses) {
+
+    Dict set_params;
+
+    set_params ["TEST"]        = test_compout;
     set_params ["STRIP"]       = strip;
     set_params ["SIDE"]        = side;
     set_params ["DAC_START" ]  = dac_start;
@@ -261,8 +287,6 @@ int Scanner<T>:: checkParams (Dict set_params)
 template <class T>
 int Scanner<T>::readController (int ireads)
 {
-
-    printf("readController\n");
     int nth_read = 0;
     while (nth_read<ireads) {
 

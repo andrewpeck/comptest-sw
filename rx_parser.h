@@ -58,6 +58,7 @@ void Parser<T>::parseDataField (const std::string* fieldline) {
     test_types ["OFFSET"]  = test_offset;
     test_types ["THRESH"]  = test_thresh;
     test_types ["CURRENT"] = test_currents;
+    test_types ["COMPOUT"] = test_compout;
 
     std::string field;
 
@@ -98,7 +99,7 @@ void Parser<T>::parseDataLine (const std::string* dataline)
 template <class T>
 void Parser<T>::parseTimeLine (const std::string* dataline)
 {
-    const bool debug = 1;
+    const bool debug = 0;
 
     if (debug) std::cout << "parseTimeLine" << std::endl;
     if (debug) std::cout << *dataline << std::endl;
@@ -133,7 +134,7 @@ void Parser<T>::parseTimeLine (const std::string* dataline)
         }
     }
 
-    printf("\n");
+    if (debug) printf("\n");
 
 }
 
@@ -141,40 +142,37 @@ void Parser<T>::parseTimeLine (const std::string* dataline)
 template <class T>
 void Parser<T>::parseBinaryLine (const std::string *line)
 {
+    const bool debug=0;
     // parse line of data, taking each 4 hex characters as a 16 bit number
     for (int i=0; i<line->length()/4; i++) {
         uint16_t data = strtol (line->substr(i*4,4).c_str(), NULL, 16);
         _data [i] = (T) data;
-        //std::cout << std::hex << data << std::endl;
+        if (debug) std::cout << std::hex << data << std::endl;
     }
     (*_params) ["DATA_RX"] = 1;
-    //printf("sys  :: loaded data to array\n");
+
+    if (debug) printf("sys  :: loaded data to array\n");
 }
 
 template <class T>
 void Parser<T>::parseBuffer (char* buffer, int size) {
 
+    const bool debug = 0;
+
+    if (debug) std::cout<<buffer;
     // cut the first 6 characters from the string as the header e.g. "DATA::"
     std::string msg_type (buffer,6);
     std::string msg      (buffer+6);
 
     if ("INFO::"==msg_type) {
-        //std::cout << "info :: ";
-        //std::cout << msg << std::endl;
     }
     else if ("DATA::"==msg_type) {
-        //std::cout << "data :: ";
-        //std::cout << msg << std::endl;
         parseDataLine (&msg);
     }
     else if ("BIN:::"==msg_type) {
-      //  std::cout << "bin :: ";
-      //  std::cout << msg << std::endl;
         parseBinaryLine (&msg);
     }
     else if ("TIME::"==msg_type) {
-        //std::cout << "time :: ";
-        //std::cout << msg << std::endl;
         parseTimeLine (&msg);
     }
 }

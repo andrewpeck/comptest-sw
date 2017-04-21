@@ -2,17 +2,19 @@
 #define BOARD_CHARACTERISTICS_H
 
 #include <cmath>
+#include "test_enums.h"
+#include <stdint.h>
 
 static const int dac_start   = 20;
 static const int dac_step    = 1;
 static const int num_pulses  = 2;
 static const int num_entries = 1024;
 
-static const int dac_start_thresh   = 1;
+static const int dac_start_thresh   = 10;
 static const int dac_step_thresh    = 1;
 
-static const int dac_start_offset   = 1;
-static const int dac_step_offset    = 2;
+static const int dac_start_offset   = 10;
+static const int dac_step_offset    = 1;
 
 static const float pulse_vref = 5.0;
 
@@ -37,4 +39,32 @@ static const float ps5v0_gain_stage_1 = 10000/100.;
 static const float ps3v3_gain_stage_2 = 1+10000./1000;
 static const float ps5v0_gain_stage_2 = 1+10000./1000;
 
+inline uint16_t getDacStartStep (int scan, int startstep) {
+
+    uint16_t start=0;
+    uint16_t step=0;
+
+    if (scan==test_thresh) {
+        start=dac_start_thresh;
+        step=dac_step_thresh;
+    }
+    else if (scan==test_offset) {
+        start=dac_start_offset;
+        step=dac_step_offset;
+    }
+    else if (scan==test_compin) {
+        start=dac_start_thresh;
+        step=dac_step_thresh;
+    }
+    else if (scan==test_compout) {
+        start=dac_start_thresh;
+        step=dac_step_thresh;
+    }
+
+    if (startstep)
+        return step;
+    else
+        return start;
+
+}
 #endif /* BOARD_CHARACTERISTICS_H */

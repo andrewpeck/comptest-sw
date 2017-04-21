@@ -13,16 +13,16 @@
 #include <TSystem.h>
 
 #define FITS 1
+//#define DRAWFITS 1
                   //int argc, char* argv []
 void show_plots (std::string name="def") {
 
     TFile* hfile = new TFile("tmp.root","READ","TMB Queue Model");
 
     TCanvas * c1 = new TCanvas ();
-    c1->SetWindowSize(1600,1024);
-    c1->Divide(5,2);
+    c1->SetWindowSize(2400,1024);
+    c1->Divide(6,2);
     c1->cd();
-
 
     //------------------------------------------------------------------------------------------------------------------
     // Currents
@@ -33,21 +33,35 @@ void show_plots (std::string name="def") {
     currents->Divide(3,2);
 
 
-    TH1F* iamp = (TH1F*) hfile -> Get ("iamp");
-    TH1F* ioff = (TH1F*) hfile -> Get ("ioff");
+    TH1F* iamp  = (TH1F*) hfile -> Get ("iamp");
+    TH1F* ioff  = (TH1F*) hfile -> Get ("ioff");
     TH1F* ibias = (TH1F*) hfile -> Get ("ibias");
-    TH1F* i5v0 = (TH1F*) hfile -> Get ("i5v0");
-    TH1F* i3v3 = (TH1F*) hfile -> Get ("i3v3");
+    TH1F* ifamp = (TH1F*) hfile -> Get ("ifamp");
+    TH1F* i5v0  = (TH1F*) hfile -> Get ("i5v0");
+    TH1F* i3v3  = (TH1F*) hfile -> Get ("i3v3");
 
     currents->cd(1);
+    iamp->SetFillColor(kRed);
     iamp->Draw();
+
     currents->cd(2);
+    iamp->SetFillColor(kRed);
     ioff->Draw();
+
     currents->cd(3);
+    iamp->SetFillColor(kRed);
     ibias->Draw();
+
     currents->cd(4);
-    i5v0->Draw();
+    iamp->SetFillColor(kRed);
+    ifamp->Draw();
+
     currents->cd(5);
+    iamp->SetFillColor(kRed);
+    i5v0->Draw();
+
+    currents->cd(6);
+    iamp->SetFillColor(kRed);
     i3v3->Draw();
 
     currents->Update();
@@ -55,10 +69,19 @@ void show_plots (std::string name="def") {
     gSystem->ProcessEvents();
 
     //------------------------------------------------------------------------------------------------------------------
+    // Peak Timing
+    //------------------------------------------------------------------------------------------------------------------
+
+    TH2F* h2_timing        = (TH2F*) hfile -> Get ("h2_timing");
+    gStyle->SetOptStat(0);
+    c1->cd(5);
+    h2_timing->Draw("COLZ");
+
+    //------------------------------------------------------------------------------------------------------------------
     // Compin
     //------------------------------------------------------------------------------------------------------------------
 
-    c1->cd (10);
+    c1->cd (11);
 
     TH2F* compin = (TH2F*) hfile -> Get ("h2_compin");
     compin->GetXaxis()->SetBinLabel(1 , "left");
@@ -73,6 +96,25 @@ void show_plots (std::string name="def") {
     gSystem->ProcessEvents();
 
     //------------------------------------------------------------------------------------------------------------------
+    // Compout
+    //------------------------------------------------------------------------------------------------------------------
+
+    c1->cd (12);
+
+    TH2F* compout = (TH2F*) hfile -> Get ("h2_compout");
+    compout->GetXaxis()->SetBinLabel(1 , "left");
+    compout->GetXaxis()->SetBinLabel(2 , "right");
+
+    gStyle->SetOptStat(0);
+
+    compout->GetZaxis()->SetRangeUser(0, 1); // ... set the range ...
+    compout->Draw("COLZ");
+    compout->SetContour(100);
+
+    c1->Update();
+    gSystem->ProcessEvents();
+
+    //------------------------------------------------------------------------------------------------------------------
     //
     //------------------------------------------------------------------------------------------------------------------
 
@@ -80,7 +122,6 @@ void show_plots (std::string name="def") {
     TH2F* thresholds_r_raw = (TH2F*) hfile -> Get ("thresholds_r");
     TH2F* offsets_l_raw    = (TH2F*) hfile -> Get ("offsets_l");
     TH2F* offsets_r_raw    = (TH2F*) hfile -> Get ("offsets_r");
-    TH2F* h2_timing        = (TH2F*) hfile -> Get ("h2_timing");
 
     //hfile->Close();
 
@@ -94,21 +135,7 @@ void show_plots (std::string name="def") {
 
 
 
-    TH1F* th1_thresh_l = new TH1F ("th1_thresh_l", "thresh l>r",  100, 0, 100);
-    TH1F* th1_thresh_r = new TH1F ("th1_thresh_r", "thresh r>l",  100, 0, 100);
-
-    TH1F* th1_offset_l = new TH1F ("th1_offset_l", "offset l>r",  50, 0, 5);
-    TH1F* th1_offset_r = new TH1F ("th1_offset_r", "offset r>l",  50, 0, 5);
-
-    th1_thresh_l->GetXaxis() -> SetTitle("threshold (mv)");
-    th1_thresh_l->GetYaxis() -> SetTitle("counts");
-    th1_thresh_r->GetXaxis() -> SetTitle("threshold (mv)");
-    th1_thresh_r->GetYaxis() -> SetTitle("counts");
-
-    th1_thresh_l->GetXaxis() -> SetTitle("offset (mv)");
-    th1_thresh_l->GetYaxis() -> SetTitle("counts");
-    th1_thresh_r->GetXaxis() -> SetTitle("offset (mv)");
-    th1_thresh_r->GetYaxis() -> SetTitle("counts");
+    //-THRESHOLDS-------------------------------------------------------------------------------------------------------
 
     float max;
     float min;
@@ -116,8 +143,16 @@ void show_plots (std::string name="def") {
     min=convertBin(test_thresh, 1);
     max=convertBin(test_thresh, 1024);
 
+    TH1F* th1_thresh_l = new TH1F ("th1_thresh_l", "thresh l>r",  max*2, 0, max);
+    TH1F* th1_thresh_r = new TH1F ("th1_thresh_r", "thresh r>l",  max*2, 0, max);
+
     TH2F* thresholds_l = new TH2F ("th2_thresholds_l" , "thresholds l>r" , 16 , 0 , 16 , 1024 , min , max);
     TH2F* thresholds_r = new TH2F ("th2_thresholds_r" , "thresholds r>l" , 16 , 0 , 16 , 1024 , min , max);
+
+    th1_thresh_l->GetXaxis() -> SetTitle("threshold (mv)");
+    th1_thresh_l->GetYaxis() -> SetTitle("counts");
+    th1_thresh_r->GetXaxis() -> SetTitle("threshold (mv)");
+    th1_thresh_r->GetYaxis() -> SetTitle("counts");
 
     thresholds_l -> GetYaxis() -> SetTitle("threshold (mV)");
     thresholds_r -> GetYaxis() -> SetTitle("threshold (mV)");
@@ -125,18 +160,29 @@ void show_plots (std::string name="def") {
     thresholds_l -> GetXaxis() -> SetTitle("channel");
     thresholds_r -> GetXaxis() -> SetTitle("channel");
 
+    //-OFFSETS----------------------------------------------------------------------------------------------------------
 
     min=convertBin(test_offset, 1);
     max=convertBin(test_offset, 1024);
 
+    TH1F* th1_offset_l = new TH1F ("th1_offset_l", "offset l>r",  max*2, 0, max);
+    TH1F* th1_offset_r = new TH1F ("th1_offset_r", "offset r>l",  max*2, 0, max);
+
     TH2F* offsets_l    = new TH2F ("th2_offsets_l"    , "offsets l>r"    , 16 , 0 , 16 , 1024 , min , max);
     TH2F* offsets_r    = new TH2F ("th2_offsets_r"    , "offsets r>l"    , 16 , 0 , 16 , 1024 , min , max);
+
+    th1_offset_l->GetXaxis() -> SetTitle("offset (mv)");
+    th1_offset_l->GetYaxis() -> SetTitle("counts");
+    th1_offset_r->GetXaxis() -> SetTitle("offset (mv)");
+    th1_offset_r->GetYaxis() -> SetTitle("counts");
 
     offsets_l -> GetYaxis() -> SetTitle("offset (mV)");
     offsets_r -> GetYaxis() -> SetTitle("offset (mV)");
 
     offsets_l -> GetXaxis() -> SetTitle("channel");
     offsets_r -> GetXaxis() -> SetTitle("channel");
+
+    //-REFILLING--------------------------------------------------------------------------------------------------------
 
     TH2F* raws []      = {offsets_l_raw, offsets_r_raw, thresholds_l_raw, thresholds_r_raw};
     TH2F* converted [] = {offsets_l, offsets_r, thresholds_l, thresholds_r};
@@ -214,7 +260,7 @@ void show_plots (std::string name="def") {
     offsets_l -> SetStats(0);
     offsets_r -> SetStats(0);
 
-#ifdef FITS
+#ifdef DRAWFITS
     TCanvas * c2 = new TCanvas ();
     c2->SetWindowSize(2400,1280);
     c2->Divide(8,2);
@@ -250,9 +296,6 @@ void show_plots (std::string name="def") {
     c1->cd(4);
     thresholds_r->Draw("COLZ");
     thresholds_r->SetContour(100);
-
-    c1->cd(5);
-    h2_timing->Draw("COLZ");
 
     c1->Modified();
     c1->Update();
@@ -410,7 +453,7 @@ void show_plots (std::string name="def") {
 
         h1->Fill(val);
 
-#ifdef FITS
+#ifdef DRAWFITS
          if (iscan==0 && iside==0) {
              c2->cd(istrip+1);
              gPad->DrawFrame(0,0, 300, 1.1);
@@ -454,7 +497,8 @@ void show_plots (std::string name="def") {
 
     }
 
-    c1->cd (6+2*iscan+iside);
+    c1->cd (7+2*iscan+iside);
+    h1->SetFillColor(kBlue-10);
     h1->Draw();
     gSystem->ProcessEvents();
 

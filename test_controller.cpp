@@ -46,6 +46,9 @@ void test_controller  (std::string modem= "/dev/cu.usbmodem401341") {
 
     int fd = open (modem.c_str(), O_RDWR | O_NOCTTY | O_SYNC);
 
+    if (fd<0)
+        return;
+
     scanner.setSerialFd (fd);
 
    //tcflush(fd, TCIOFLUSH); // clear buffer
@@ -59,8 +62,11 @@ void test_controller  (std::string modem= "/dev/cu.usbmodem401341") {
     scanner.flushController();
     scanner.flushController();
     scanner.flushController();
+    scanner.flushController();
+    scanner.flushController();
+    scanner.flushController();
+    scanner.flushController();
 
-     scanner.flushController();
      tcflush(fd, TCIOFLUSH); // clear buffer
 
      //-----------------------------------------------------------------------------------------------------------------
@@ -107,6 +113,30 @@ void test_controller  (std::string modem= "/dev/cu.usbmodem401341") {
      }
      scanner.flushController();
 
+     //-----------------------------------------------------------------------------------------------------------------
+     // Compout
+     //-----------------------------------------------------------------------------------------------------------------
+
+     scanner.init();
+
+     scanner.flushController();
+
+     for (int iside = 0; iside < 2; iside++) {
+
+         int istrip = 15;
+
+         scanner.scanCompout(istrip, iside, dac_start_thresh, dac_step_thresh, num_pulses);
+    //   scanner.scanThresh(istrip, iside, dac_start_thresh, dac_step_thresh, num_pulses);
+
+         scanner.flushController();
+
+         convertCounts(data_buf, num_entries, num_pulses);
+
+         writer.fillSummary (test_compout, istrip, iside, data_buf, num_entries);
+
+     }
+
+     scanner.flushController();
 
      //-----------------------------------------------------------------------------------------------------------------
      // Timing Scan
@@ -121,11 +151,6 @@ void test_controller  (std::string modem= "/dev/cu.usbmodem401341") {
                  }
              }
      }}
-
-
-     //-----------------------------------------------------------------------------------------------------------------
-     // Compout
-     //-----------------------------------------------------------------------------------------------------------------
 
      //-----------------------------------------------------------------------------------------------------------------
      // Currents

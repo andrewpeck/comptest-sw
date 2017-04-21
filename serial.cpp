@@ -93,7 +93,7 @@ void Serial::setFd (int fd) {
 }
 
 void Serial::flush () {
-   // rx();
-    //tcflush(fd_, TCIOFLUSH); // clear buffer
-    //printf("sys  :: flushed -- %s\n", _rx_buf);
+   rx();
+   tcflush(fd_, TCIOFLUSH); // clear buffer
+   //printf("sys  :: flushed -- %s\n", _rx_buf);
 }
