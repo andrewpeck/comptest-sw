@@ -30,13 +30,13 @@ int Serial::rx ()
         FD_SET(fd_, &set); /* add our file descriptor to the set */
 
         timeout.tv_sec = 0;
-        timeout.tv_usec = 5000;
+        timeout.tv_usec = 20000;
 
         int rv = select(fd_ + 1, &set, NULL, NULL, &timeout);
         if (rv == -1)
             perror("select\n"); /* an error accured */
         else if(rv == 0) {
-            //printf("sys  :: timeout\n"); /* a timeout occured */
+            printf("sys  :: timeout\n"); /* a timeout occured */
             return 0;
         }
         else

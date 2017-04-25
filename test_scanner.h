@@ -24,7 +24,7 @@ class Scanner {
         int scanOffset (int strip, int side, int dac_start, int dac_step, int num_pulses);
         int scanThresh (int strip, int side, int dac_start, int dac_step, int num_pulses);
         int scanCompout (int strip, int side, int dac_start, int dac_step, int num_pulses);
-        std::vector<uint8_t>* scanTiming (int dac_counts, int num_pulses, int strip, int side);
+        std::vector<uint8_t>* scanTiming (int dac_counts, int num_pulses, int strip, int side, int mode);
         int checkParams (const Dict set_params);
         void flushController ();
         void reset ();
@@ -60,7 +60,7 @@ int Scanner<T>::scanCurrent (int channel) {
 }
 
 template <class T>
-std::vector<uint8_t>* Scanner<T>::scanTiming (int dac_counts, int num_pulses, int strip, int side) {
+std::vector<uint8_t>* Scanner<T>::scanTiming (int dac_counts, int num_pulses, int strip, int side, int mode) {
 
     Dict set_params;
 
@@ -69,6 +69,7 @@ std::vector<uint8_t>* Scanner<T>::scanTiming (int dac_counts, int num_pulses, in
     set_params ["STRIP"]      = strip;
     set_params ["SIDE"]       = side;
     set_params ["TEST"]       = test_timing;
+    set_params ["MODE"]       = mode;
 
     scanGeneric(set_params);
     return parser.getDeltas();
@@ -87,6 +88,7 @@ int Scanner<T>::scanGeneric (Dict test_params) {
     int dac_start  = test_params["DAC_START"];
     int dac_step   = test_params["DAC_STEP"];
     int num_pulses = test_params["NUM_PULSES"];
+    int mode       = test_params["MODE"];
 
     char  tx_buf [128];
 
@@ -110,7 +112,7 @@ int Scanner<T>::scanGeneric (Dict test_params) {
     }
     else if (scan==test_timing) {
         if (debug) printf("\nsys  :: %s scan started on   strip=%02d side=%1d dac_start=%d\n", testname_short[scan], strip, side, dac_start);
-        sprintf(tx_buf, "%s %i %i %i %i\r\n", testname_short[scan], dac_start, num_pulses, strip, side);
+        sprintf(tx_buf, "%s %i %i %i %i %i\r\n", testname_short[scan], dac_start, num_pulses, strip, side, mode);
     }
 
     if (debug) printf("%s\n", tx_buf);
@@ -154,7 +156,7 @@ int Scanner<T>::scanGeneric (Dict test_params) {
 
     auto retval = checkParams (test_params);
 
-    if (scan==0 || scan==1) {
+    if (scan==test_offset || scan==test_thresh || scan==test_compout) {
         if (retval==0) {
             printf("sys  :: %ss scan %s on strip=%02d side=%1d\n", testname_short[scan], COMPLETED, strip, side);
         }
@@ -163,7 +165,7 @@ int Scanner<T>::scanGeneric (Dict test_params) {
         }
     }
 
-    else if (scan==2) {
+    else if (scan==test_currents) {
 
         if (retval==0) {
             printf("sys  :: %s scan %s on chann=%02d curr=%s\n", testname_short[scan], COMPLETED, channel, currents[channel]);

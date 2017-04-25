@@ -25,7 +25,7 @@
 #include "data.cpp"
 
 
-void test_controller  (std::string modem= "/dev/cu.usbmodem401341") {
+int test_controller  (std::string modem= "/dev/cu.usbmodem401341") {
 
     float data_buf [1024];
     float amplitude [1024];
@@ -40,14 +40,14 @@ void test_controller  (std::string modem= "/dev/cu.usbmodem401341") {
 
     TFile* hfile = new TFile(filename.c_str(),"RECREATE","LCT Comparator Test Results");
 
-    hfile->Write();
+    //hfile->Write();
 
     histoWriter writer(hfile);
 
     int fd = open (modem.c_str(), O_RDWR | O_NOCTTY | O_SYNC);
 
     if (fd<0)
-        return;
+        return -1;
 
     scanner.setSerialFd (fd);
 
@@ -125,7 +125,7 @@ void test_controller  (std::string modem= "/dev/cu.usbmodem401341") {
 
          int istrip = 15;
 
-         scanner.scanCompout(istrip, iside, dac_start_thresh, dac_step_thresh, num_pulses);
+         scanner.scanCompout(istrip, iside, dac_start_compout, dac_step_compout, num_pulses);
     //   scanner.scanThresh(istrip, iside, dac_start_thresh, dac_step_thresh, num_pulses);
 
          scanner.flushController();
@@ -144,13 +144,17 @@ void test_controller  (std::string modem= "/dev/cu.usbmodem401341") {
 
      for (int istrip=0; istrip<15; istrip++) {
          for (int iside = 0; iside < 2; iside++) {
-             std::vector<uint8_t>* deltas = scanner.scanTiming(1000, 5, istrip, iside);
+         for (int imode = 0; imode < 4; imode++) {
+             std::vector<uint8_t>* deltas = scanner.scanTiming(1000, 5, istrip, iside, imode);
              for (int pktime=0; pktime<8; pktime++) {
-                 for(uint16_t time : deltas[pktime]) {
-                     writer.fillTiming(pktime, time);
+                 for(uint16_t delta : deltas[pktime]) {
+
+                     if (imode==2) writer.fillTiming(pktime, delta);
+
+                     writer.fillMode(pktime, imode, delta);
                  }
              }
-     }}
+     }} }
 
      //-----------------------------------------------------------------------------------------------------------------
      // Currents
@@ -169,6 +173,8 @@ void test_controller  (std::string modem= "/dev/cu.usbmodem401341") {
 
     hfile->Write();
     close (fd);
+
+    return 0;
 }
 
 int main (int argc, char *argv[]) {
@@ -178,6 +184,6 @@ int main (int argc, char *argv[]) {
         modem = argv[1];
     }
 
-    test_controller(modem);
+    return test_controller(modem);
 
 }

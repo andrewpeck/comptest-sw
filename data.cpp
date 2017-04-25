@@ -2,6 +2,7 @@
 #include "board_characteristics.h"
 #include <stdint.h>
 #include <TMath.h>
+#include <TString.h>
 
 #include "data.h"
 
@@ -21,9 +22,16 @@ float convertBin (int test, int bin) {
             start = dac_start_offset;
             step  = dac_step_offset;
         }
-        else {
+        else if (test==test_thresh) {
             start = dac_start_thresh;
             step  = dac_step_thresh;
+        }
+        else if (test==test_compout) {
+            start = dac_start_compout;
+            step  = dac_step_compout;
+        }
+        else {
+            throw std::invalid_argument(TString::Format("Tried to convert bin with test=%i",test));
         }
 
         uint16_t dac_value = start + (bin-1)*step;
@@ -31,24 +39,23 @@ float convertBin (int test, int bin) {
         float dac_millivolts = 1000. * pulse_vref * dac_value / 16383.;
         float pulse_voltage  = dac_millivolts * shaping_scale_factor;
 
-        //printf ("pulse=%f mv=%f dac=%i start=%i step=%i bin=%i\n", pulse_voltage, dac_millivolts, dac_value, start, step, bin);
-
         float  hi_amplitude = pulse_voltage * attenuation_high;
         float med_amplitude = pulse_voltage * attenuation_med;
         float low_amplitude = pulse_voltage * attenuation_low;
 
         if (test==test_thresh) {
-            //printf ("converting test=%i bin=%i to %f\n", test, bin, hi_amplitude);
             return hi_amplitude;
         }
-
         else if (test==test_offset) {
             float amp = (med_amplitude - low_amplitude); // 3.5 = AC amplifier gain
-            //printf ("converting test=%i bin=%i to %f\n", test, bin, amp);
-            return amp ; // 3.5==amp gain
+            return amp ;                                 // 3.5==amp gain
+        }
+        else if (test==test_compout) {
+            float amp = (med_amplitude - low_amplitude); // 3.5 = AC amplifier gain
+            return amp ;                                 // 3.5==amp gain
         }
         else {
-            return 0;
+            throw std::invalid_argument(TString::Format("convertBin test was not specified: test=%i",test));
         }
 }
 

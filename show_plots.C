@@ -1,4 +1,8 @@
 
+#include "autorange.h"
+#include "drawLimitLines.h"
+#include "limits.h"
+
 #include "test_enums.h"
 #include "board_characteristics.h"
 #include "data.cpp"
@@ -13,125 +17,183 @@
 #include <TSystem.h>
 
 #define FITS 1
-//#define DRAWFITS 1
+#define DRAWFITS 1
                   //int argc, char* argv []
+
 void show_plots (std::string name="def") {
+
+    gStyle->SetPalette(1);
+
 
     TFile* hfile = new TFile("tmp.root","READ","TMB Queue Model");
 
+
+    std::string logfile = std::string("./results/") + name + ".root";
+
+    TFile* outfile = new TFile(logfile.c_str(),"RECREATE","LCT Comparator Test Results");
+
+
     TCanvas * c1 = new TCanvas ();
-    c1->SetWindowSize(2400,1024);
-    c1->Divide(6,2);
+    c1->SetWindowSize(512*4,512*2);
+    c1->Divide(4,2);
     c1->cd();
 
     //------------------------------------------------------------------------------------------------------------------
     // Currents
     //------------------------------------------------------------------------------------------------------------------
 
-    TCanvas * currents = new TCanvas ();
-    currents->SetWindowSize(1200,800);
-    currents->Divide(3,2);
+    TCanvas * c_currents = new TCanvas ();
+    c_currents->SetWindowSize(512*3,512*2);
+    c_currents->Divide(3,2);
 
+    TH1F* iamp  = (TH1F*) hfile -> Get ("iamp") -> Clone();
+    TH1F* ioff  = (TH1F*) hfile -> Get ("ioff") -> Clone();
+    TH1F* ibias = (TH1F*) hfile -> Get ("ibias")-> Clone();
+    TH1F* ifamp = (TH1F*) hfile -> Get ("ifamp")-> Clone();
+    TH1F* i5v0  = (TH1F*) hfile -> Get ("i5v0") -> Clone();
+    TH1F* i3v3  = (TH1F*) hfile -> Get ("i3v3") -> Clone();
 
-    TH1F* iamp  = (TH1F*) hfile -> Get ("iamp");
-    TH1F* ioff  = (TH1F*) hfile -> Get ("ioff");
-    TH1F* ibias = (TH1F*) hfile -> Get ("ibias");
-    TH1F* ifamp = (TH1F*) hfile -> Get ("ifamp");
-    TH1F* i5v0  = (TH1F*) hfile -> Get ("i5v0");
-    TH1F* i3v3  = (TH1F*) hfile -> Get ("i3v3");
+    std::map <std::string, TH1F*> currents_map;
 
-    currents->cd(1);
-    iamp->SetFillColor(kRed);
-    iamp->Draw();
+    currents_map ["iamp"]  = iamp;
+    currents_map ["ioff"]  = ioff;
+    currents_map ["ibias"] = ibias;
+    currents_map ["ifamp"] = ifamp;
+    currents_map ["i5v0"]  = i5v0;
+    currents_map ["i3v3"]  = i3v3;
 
-    currents->cd(2);
-    iamp->SetFillColor(kRed);
-    ioff->Draw();
+    int i=0;
+    for(auto& channel : currents_vec) {
 
-    currents->cd(3);
-    iamp->SetFillColor(kRed);
-    ibias->Draw();
+        double xmin = i_mean[channel] - i_spread[channel]*2;
+        double xmax = i_mean[channel] + i_spread[channel]*2;
 
-    currents->cd(4);
-    iamp->SetFillColor(kRed);
-    ifamp->Draw();
+        autoRange (currents_map[channel] , xmin, xmax);
 
-    currents->cd(5);
-    iamp->SetFillColor(kRed);
-    i5v0->Draw();
+        c_currents->cd(i+1);
 
-    currents->cd(6);
-    iamp->SetFillColor(kRed);
-    i3v3->Draw();
+        currents_map[channel] ->SetFillColor(kRed);
+        currents_map[channel] ->Draw();
+        currents_map[channel] ->SetDirectory(outfile->GetDirectory(""));
 
-    currents->Update();
+        c_currents->Update();
 
-    gSystem->ProcessEvents();
+        xmin = i_mean[channel] - i_spread[channel];
+        xmax = i_mean[channel] + i_spread[channel];
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Peak Timing
-    //------------------------------------------------------------------------------------------------------------------
+        drawLimitLines( gPad, xmin, xmax);
 
-    TH2F* h2_timing        = (TH2F*) hfile -> Get ("h2_timing");
-    gStyle->SetOptStat(0);
-    c1->cd(5);
-    h2_timing->Draw("COLZ");
+        i++;
+    }
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Compin
-    //------------------------------------------------------------------------------------------------------------------
-
-    c1->cd (11);
-
-    TH2F* compin = (TH2F*) hfile -> Get ("h2_compin");
-    compin->GetXaxis()->SetBinLabel(1 , "left");
-    compin->GetXaxis()->SetBinLabel(2 , "right");
-
-    //gStyle->SetOptStat(0);
-
-    compin->GetZaxis()->SetRangeUser(0, 1); // ... set the range ...
-    compin->Draw("COLZ");
-
-    c1->Update();
-    gSystem->ProcessEvents();
-
-    //------------------------------------------------------------------------------------------------------------------
-    // Compout
-    //------------------------------------------------------------------------------------------------------------------
-
-    c1->cd (12);
-
-    TH2F* compout = (TH2F*) hfile -> Get ("h2_compout");
-    compout->GetXaxis()->SetBinLabel(1 , "left");
-    compout->GetXaxis()->SetBinLabel(2 , "right");
-
-    gStyle->SetOptStat(0);
-
-    compout->GetZaxis()->SetRangeUser(0, 1); // ... set the range ...
-    compout->Draw("COLZ");
-    compout->SetContour(100);
-
-    c1->Update();
+    c_currents->Update();
     gSystem->ProcessEvents();
 
     //------------------------------------------------------------------------------------------------------------------
     //
     //------------------------------------------------------------------------------------------------------------------
 
-    TH2F* thresholds_l_raw = (TH2F*) hfile -> Get ("thresholds_l");
-    TH2F* thresholds_r_raw = (TH2F*) hfile -> Get ("thresholds_r");
-    TH2F* offsets_l_raw    = (TH2F*) hfile -> Get ("offsets_l");
-    TH2F* offsets_r_raw    = (TH2F*) hfile -> Get ("offsets_r");
+    TCanvas * c9 = new TCanvas ();
+    c9->SetWindowSize(512*2, 512*2);
+    c9->Divide(2,2);
+    c9->cd();
 
-    //hfile->Close();
+    //------------------------------------------------------------------------------------------------------------------
+    // Peak Timing
+    //------------------------------------------------------------------------------------------------------------------
 
-//    std::string ttyname = "./results/def.root";
-//    if (argc>1) {
-//        ttyname = argv[1];
-//    }
-//
-//    TFile* outfile = new TFile(filename.c_str(),"RECREATE","LCT Comparator Test Results");
-//    hfile->Write();
+    TH2F* h2_timing = (TH2F*) hfile -> Get ("h2_timing");
+    h2_timing->SetStats(0);
+    c9->cd(1);
+    h2_timing->SetOption("COLZ");
+    h2_timing->Draw();
+    h2_timing ->SetDirectory(outfile->GetDirectory(""));
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Peak Mode
+    //------------------------------------------------------------------------------------------------------------------
+
+    TH2F* h2_mode = (TH2F*) hfile -> Get ("h2_mode");
+
+    double modemin=1e9;
+    for (int imode=0; imode<4; imode++) {
+        for (int itime=0; itime<8; itime++) {
+            auto val = h2_mode->GetBinContent(imode+1,  itime+1);
+            if (val < modemin)
+                modemin=val;
+        }
+    }
+
+    modemin += 1e-9;
+
+    for (int imode=0; imode<4; imode++) {
+        for (int itime=0; itime<8; itime++) {
+            h2_mode->SetBinContent (imode+1, itime+1, (h2_mode->GetBinContent(imode+1,  itime+1)-modemin)/32/5);
+        }
+    }
+
+    h2_mode->SetContour(100);
+
+    h2_mode->SetStats(0);
+    c9->cd(2);
+    h2_mode->SetOption("COLZ");
+    h2_mode->Draw();
+    h2_mode ->SetDirectory(outfile->GetDirectory(""));
+
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Compin
+    //------------------------------------------------------------------------------------------------------------------
+
+    c9->cd (3);
+
+    TH2F* compin = (TH2F*) hfile -> Get ("h2_compin");
+
+    compin->SetStats(0);
+
+    compin->SetOption("COLZ");
+    compin ->SetDirectory(outfile->GetDirectory(""));
+    compin->Draw();
+
+    c9->Update();
+    gSystem->ProcessEvents();
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Compout
+    //------------------------------------------------------------------------------------------------------------------
+
+    c9->cd (4);
+
+    TH2F* compout = (TH2F*) hfile -> Get ("h2_compout");
+
+    compout->SetStats(0);
+    compout ->SetDirectory(outfile->GetDirectory(""));
+
+    compout->SetOption("COLZ");
+    compout->Draw();
+    compout->SetContour(100);
+
+    c9->Update();
+    gSystem->ProcessEvents();
+
+    //------------------------------------------------------------------------------------------------------------------
+    //
+    //------------------------------------------------------------------------------------------------------------------
+
+    TH2F* thresholds_l = (TH2F*) hfile -> Get ("thresholds_l");
+    TH2F* thresholds_r = (TH2F*) hfile -> Get ("thresholds_r");
+    TH2F* offsets_l    = (TH2F*) hfile -> Get ("offsets_l");
+    TH2F* offsets_r    = (TH2F*) hfile -> Get ("offsets_r");
+
+    thresholds_l ->SetDirectory(outfile->GetDirectory(""));
+    thresholds_r ->SetDirectory(outfile->GetDirectory(""));
+    offsets_l ->SetDirectory(outfile->GetDirectory(""));
+    offsets_r ->SetDirectory(outfile->GetDirectory(""));
+
+    hfile->Close();
+
+
+
 
 
 
@@ -143,122 +205,104 @@ void show_plots (std::string name="def") {
     min=convertBin(test_thresh, 1);
     max=convertBin(test_thresh, 1024);
 
-    TH1F* th1_thresh_l = new TH1F ("th1_thresh_l", "thresh l>r",  max*2, 0, max);
-    TH1F* th1_thresh_r = new TH1F ("th1_thresh_r", "thresh r>l",  max*2, 0, max);
-
-    TH2F* thresholds_l = new TH2F ("th2_thresholds_l" , "thresholds l>r" , 16 , 0 , 16 , 1024 , min , max);
-    TH2F* thresholds_r = new TH2F ("th2_thresholds_r" , "thresholds r>l" , 16 , 0 , 16 , 1024 , min , max);
+    TH1F* th1_thresh_l = new TH1F ("th1_thresh_l", "thresh l>r",  max*4, 0, max);
+    TH1F* th1_thresh_r = new TH1F ("th1_thresh_r", "thresh r>l",  max*4, 0, max);
 
     th1_thresh_l->GetXaxis() -> SetTitle("threshold (mv)");
     th1_thresh_l->GetYaxis() -> SetTitle("counts");
     th1_thresh_r->GetXaxis() -> SetTitle("threshold (mv)");
     th1_thresh_r->GetYaxis() -> SetTitle("counts");
 
-    thresholds_l -> GetYaxis() -> SetTitle("threshold (mV)");
-    thresholds_r -> GetYaxis() -> SetTitle("threshold (mV)");
-
-    thresholds_l -> GetXaxis() -> SetTitle("channel");
-    thresholds_r -> GetXaxis() -> SetTitle("channel");
+    th1_thresh_l->SetStats(1);
+    th1_thresh_r->SetStats(1);
 
     //-OFFSETS----------------------------------------------------------------------------------------------------------
 
     min=convertBin(test_offset, 1);
     max=convertBin(test_offset, 1024);
 
-    TH1F* th1_offset_l = new TH1F ("th1_offset_l", "offset l>r",  max*2, 0, max);
-    TH1F* th1_offset_r = new TH1F ("th1_offset_r", "offset r>l",  max*2, 0, max);
-
-    TH2F* offsets_l    = new TH2F ("th2_offsets_l"    , "offsets l>r"    , 16 , 0 , 16 , 1024 , min , max);
-    TH2F* offsets_r    = new TH2F ("th2_offsets_r"    , "offsets r>l"    , 16 , 0 , 16 , 1024 , min , max);
+    TH1F* th1_offset_l = new TH1F ("th1_offset_l", "offset l>r",  max*4, 0, max);
+    TH1F* th1_offset_r = new TH1F ("th1_offset_r", "offset r>l",  max*4, 0, max);
 
     th1_offset_l->GetXaxis() -> SetTitle("offset (mv)");
     th1_offset_l->GetYaxis() -> SetTitle("counts");
     th1_offset_r->GetXaxis() -> SetTitle("offset (mv)");
     th1_offset_r->GetYaxis() -> SetTitle("counts");
 
-    offsets_l -> GetYaxis() -> SetTitle("offset (mV)");
-    offsets_r -> GetYaxis() -> SetTitle("offset (mV)");
-
-    offsets_l -> GetXaxis() -> SetTitle("channel");
-    offsets_r -> GetXaxis() -> SetTitle("channel");
+    th1_thresh_l->SetStats(1);
+    th1_thresh_r->SetStats(1);
 
     //-REFILLING--------------------------------------------------------------------------------------------------------
 
-    TH2F* raws []      = {offsets_l_raw, offsets_r_raw, thresholds_l_raw, thresholds_r_raw};
-    TH2F* converted [] = {offsets_l, offsets_r, thresholds_l, thresholds_r};
+    //TH2F* raws []      = {offsets_l_raw, offsets_r_raw, thresholds_l_raw, thresholds_r_raw};
+    //TH2F* converted [] = {offsets_l, offsets_r, thresholds_l, thresholds_r};
 
-    for (int iscan=0; iscan<2; iscan++) {
-    for (int iside=0; iside<2; iside++) {
+    //for (int iscan=0; iscan<2; iscan++) {
+    //for (int iside=0; iside<2; iside++) {
 
-        converted[iscan*2+iside]->GetXaxis()->SetNdivisions(-16);
-        converted[iscan*2+iside]->GetXaxis()->SetBinLabel(1  , "0");
-        converted[iscan*2+iside]->GetXaxis()->SetBinLabel(2  , "1");
-        converted[iscan*2+iside]->GetXaxis()->SetBinLabel(3  , "2");
-        converted[iscan*2+iside]->GetXaxis()->SetBinLabel(4  , "3");
-        converted[iscan*2+iside]->GetXaxis()->SetBinLabel(5  , "4");
-        converted[iscan*2+iside]->GetXaxis()->SetBinLabel(6  , "5");
-        converted[iscan*2+iside]->GetXaxis()->SetBinLabel(7  , "6");
-        converted[iscan*2+iside]->GetXaxis()->SetBinLabel(8  , "7");
-        converted[iscan*2+iside]->GetXaxis()->SetBinLabel(9  , "8");
-        converted[iscan*2+iside]->GetXaxis()->SetBinLabel(10 , "9");
-        converted[iscan*2+iside]->GetXaxis()->SetBinLabel(11 , "A");
-        converted[iscan*2+iside]->GetXaxis()->SetBinLabel(12 , "B");
-        converted[iscan*2+iside]->GetXaxis()->SetBinLabel(13 , "C");
-        converted[iscan*2+iside]->GetXaxis()->SetBinLabel(14 , "D");
-        converted[iscan*2+iside]->GetXaxis()->SetBinLabel(15 , "E");
-        converted[iscan*2+iside]->GetXaxis()->SetBinLabel(16 , "F");
+    //    converted[iscan*2+iside]->GetXaxis()->SetNdivisions(-16);
+    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(1  , "0");
+    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(2  , "1");
+    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(3  , "2");
+    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(4  , "3");
+    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(5  , "4");
+    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(6  , "5");
+    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(7  , "6");
+    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(8  , "7");
+    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(9  , "8");
+    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(10 , "9");
+    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(11 , "A");
+    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(12 , "B");
+    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(13 , "C");
+    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(14 , "D");
+    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(15 , "E");
+    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(16 , "F");
 
-        raws[iscan*2+iside]->GetXaxis()->SetNdivisions(-16);
-        raws[iscan*2+iside]->GetXaxis()->SetBinLabel(1  , "0");
-        raws[iscan*2+iside]->GetXaxis()->SetBinLabel(2  , "1");
-        raws[iscan*2+iside]->GetXaxis()->SetBinLabel(3  , "2");
-        raws[iscan*2+iside]->GetXaxis()->SetBinLabel(4  , "3");
-        raws[iscan*2+iside]->GetXaxis()->SetBinLabel(5  , "4");
-        raws[iscan*2+iside]->GetXaxis()->SetBinLabel(6  , "5");
-        raws[iscan*2+iside]->GetXaxis()->SetBinLabel(7  , "6");
-        raws[iscan*2+iside]->GetXaxis()->SetBinLabel(8  , "7");
-        raws[iscan*2+iside]->GetXaxis()->SetBinLabel(9  , "8");
-        raws[iscan*2+iside]->GetXaxis()->SetBinLabel(10 , "9");
-        raws[iscan*2+iside]->GetXaxis()->SetBinLabel(11 , "A");
-        raws[iscan*2+iside]->GetXaxis()->SetBinLabel(12 , "B");
-        raws[iscan*2+iside]->GetXaxis()->SetBinLabel(13 , "C");
-        raws[iscan*2+iside]->GetXaxis()->SetBinLabel(14 , "D");
-        raws[iscan*2+iside]->GetXaxis()->SetBinLabel(15 , "E");
-        raws[iscan*2+iside]->GetXaxis()->SetBinLabel(16 , "F");
+    //    raws[iscan*2+iside]->GetXaxis()->SetNdivisions(-16);
+    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(1  , "0");
+    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(2  , "1");
+    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(3  , "2");
+    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(4  , "3");
+    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(5  , "4");
+    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(6  , "5");
+    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(7  , "6");
+    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(8  , "7");
+    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(9  , "8");
+    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(10 , "9");
+    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(11 , "A");
+    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(12 , "B");
+    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(13 , "C");
+    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(14 , "D");
+    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(15 , "E");
+    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(16 , "F");
 
-        raws[iscan*2+iside]->SetMaximum(1);
-        raws[iscan*2+iside]->SetMinimum(0);
+    //    raws[iscan*2+iside]->SetMaximum(1);
+    //    raws[iscan*2+iside]->SetMinimum(0);
 
-        converted[iscan*2+iside]->SetMaximum(1);
-        converted[iscan*2+iside]->SetMinimum(0);
-
-
-    for (int istrip=0; istrip<16; istrip++) {
-    for (int ibin=0;ibin<1024;ibin++) {
-
-            int    strip     = istrip;
-            float  errors    = raws[iscan*2+iside]->GetBinContent(istrip+1, ibin+1);
-
-            converted[iscan*2+iside]-> SetBinContent(strip+1, ibin+1, errors);
+    //    converted[iscan*2+iside]->SetMaximum(1);
+    //    converted[iscan*2+iside]->SetMinimum(0);
 
 
-    } } } }
+    //for (int istrip=0; istrip<16; istrip++) {
+    //for (int ibin=0;ibin<1024;ibin++) {
 
-    // thresholds_l = thresholds_l_raw ;
-    // thresholds_r = thresholds_r_raw ;
-    // offsets_l    = offsets_l_raw    ;
-    // offsets_r    = offsets_r_raw    ;
+    //        int    strip     = istrip;
+    //        float  errors    = raws[iscan*2+iside]->GetBinContent(istrip+1, ibin+1);
+
+    //        converted[iscan*2+iside]-> SetBinContent(strip+1, ibin+1, errors);
+
+
+    //} } } }
+
+//    thresholds_l = thresholds_l_raw ;
+//    thresholds_r = thresholds_r_raw ;
+//    offsets_l    = offsets_l_raw    ;
+//    offsets_r    = offsets_r_raw    ;
 
 
     //------------------------------------------------------------------------------------------------------------------
     //
     //------------------------------------------------------------------------------------------------------------------
-
-
-    thresholds_l -> SetStats(0);
-    thresholds_r -> SetStats(0);
-    offsets_l -> SetStats(0);
-    offsets_r -> SetStats(0);
 
 #ifdef DRAWFITS
     TCanvas * c2 = new TCanvas ();
@@ -279,22 +323,24 @@ void show_plots (std::string name="def") {
 #endif
 
 
-    gStyle->SetPalette(1);
-
     c1->cd(1);
-    offsets_l->Draw("COLZ");
+    offsets_l->SetOption("COLZ");
+    offsets_l->Draw();
     offsets_l->SetContour(100);
 
     c1->cd(2);
-    offsets_r->Draw("COLZ");
+    offsets_r->SetOption("COLZ");
+    offsets_r->Draw();
     offsets_r->SetContour(100);
 
     c1->cd(3);
-    thresholds_l->Draw("COLZ");
+    thresholds_l->SetOption("COLZ");
+    thresholds_l->Draw();
     thresholds_l->SetContour(100);
 
     c1->cd(4);
-    thresholds_r->Draw("COLZ");
+    thresholds_r->SetOption("COLZ");
+    thresholds_r->Draw();
     thresholds_r->SetContour(100);
 
     c1->Modified();
@@ -372,47 +418,48 @@ void show_plots (std::string name="def") {
         gr->SetName(name);
         gr->SetTitle(title);
 
-        TF1 *f1 = new TF1("fit","[0]/2*(1-TMath::Erf([1]*(x-[2])))", 0, 1024);
+        TF1 *f1 = new TF1("fit","1.0/2*(1-TMath::Erf(1/[0]*(x-[1])))", 0, 1024);
 
         //std::cout << "fitting on strip " << istrip << std::endl;
 
 #ifdef FITS
         if (iscan==test_thresh) {
-            f1->SetParameter(0, 1.05);
-            f1->SetParameter(1, .3 );
-            f1->SetParameter(2, 150);
+            f1->SetParLimits(0, 0.01,5);
+            f1->SetParLimits(1, 0,600);
 
-            gr->Fit("fit", "q", "", 20, 400);
+            f1->SetParameter(0, 0.01);
+            f1->SetParameter(1, 100);
+
+            gr->Fit("fit", "QMWC", "", 0, 512);
         }
         else if (iscan==test_offset) {
+
+            f1->SetParLimits(1, 0,1023);
+
             if (iside==0) { // l>r
-                f1->SetParameter(0, 1.1 );
-                f1->SetParameter(1, .2   );
-                f1->SetParameter(2, 300 );
-                gr->Fit("fit", "q", "", 100, 1024);
+                f1->SetParLimits(0, 0.01,40);
+                f1->SetParameter(0, 0.01     );
+                f1->SetParameter(1, 200 );
+                gr->Fit("fit", "QMWC", "", 0, 1024);
             }
             else {
-                f1->SetParameter(0, 1.1 );
-                f1->SetParameter(1, .5   );
-                f1->SetParameter(2, 100 );
-                gr->Fit("fit", "q", "", 20, 200);
+                f1->SetParLimits(0, 0.01,10);
+                f1->SetParameter(0, 0.01  );
+                f1->SetParameter(1, 60 );
+                gr->Fit("fit", "QMWC", "", 0, 512);
             }
         }
 #endif
 
         float p0 = f1->GetParameter(0);
         float p1 = f1->GetParameter(1);
-        float p2 = f1->GetParameter(2);
 
         // just check whether the fit failed
         bool fail=0;
-        if (p0 > 1.1 || p0<0.9) {
+        if (p0>100 || p0<0) {
             fail=true;
         }
-        if (p1>100 || p1<0) {
-            fail=true;
-        }
-        if (p2<0) {
+        if (p1<0) {
             fail=true;
         }
 
@@ -436,20 +483,20 @@ void show_plots (std::string name="def") {
                          // f2->SetParameter(2, p2);
 
         if (fail) {
-            fit_span   [istrip] = f1->GetParameter(0);
-            fit_width  [istrip] = f1->GetParameter(1);
-            fit_thresh [istrip] = 99;;
+            fit_width  [istrip] = f1->GetParameter(0);
+            fit_thresh [istrip] = f1->GetParameter(1);
+            std::cout << "fail xmax=" << fit_thresh[istrip] << std::endl;
 
         }
         else {
-            fit_span   [istrip] = f1->GetParameter(0);
-            fit_width  [istrip] = f1->GetParameter(1);
-            fit_thresh [istrip] = f1->GetParameter(2);
+            fit_width  [istrip] = f1->GetParameter(0);
+            fit_thresh [istrip] = f1->GetParameter(1);
         }
 
         //--------------------------------------------------------------------------------------------------------------
 
-        double val = convertBin(iscan, fit_thresh[istrip]);
+        double val = (fail) ? h1->GetXaxis()->GetXmax() - 1e-9 : convertBin(iscan, fit_thresh[istrip]);
+        //std::cout << "val=" << val << std::endl;
 
         h1->Fill(val);
 
@@ -497,7 +544,7 @@ void show_plots (std::string name="def") {
 
     }
 
-    c1->cd (7+2*iscan+iside);
+    c1->cd (5+2*iscan+iside);
     h1->SetFillColor(kBlue-10);
     h1->Draw();
     gSystem->ProcessEvents();
@@ -507,5 +554,7 @@ void show_plots (std::string name="def") {
 
     c1->cd();
 
+    outfile->Write();
+//    hfile->Write("",TObject::kOverwrite);
 
 }

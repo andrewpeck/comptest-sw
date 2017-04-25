@@ -29,7 +29,7 @@ void histoWriter::fill1DHistogram (int scan, int channel, float* data_x, int n_e
     asprintf(&name, "%s", currents[channel]);
     asprintf(&title,"Current %s", currents[channel]);
 
-    std::cout << "Generating histo for " << name << "    Title=" << title << "   Min=" << xlow << "    Max=" << xhigh << std::endl;
+    //std::cout << "Generating histo for " << name << "    Title=" << title << "   Min=" << xlow << "    Max=" << xhigh << std::endl;
 
     TH1F* h1 = new TH1F (name, title,  nbinsx, xlow, xhigh);
 
@@ -62,7 +62,7 @@ void histoWriter::fill2DHistogram (int scan, int strip, int side, float* data_x,
     asprintf(&name, "%s_%s%d", testname[scan],side_str_short[side], strip);
     asprintf(&title,"%s %s Channel %d", testname[scan],side_str_long[side], strip);
 
-    std::cout << "Generating histo for " << name << "    Title=" << title << std::endl;
+    //std::cout << "Generating histo for " << name << "    Title=" << title << std::endl;
 
     //TH2F* h2 = new TH2F (name, title,  nbinsx, xlow, xhigh, nbinsy, ylow, yhigh);
     //TProfile* h2 = new TProfile (name, title,  nbinsx, xlow, xhigh, ylow, yhigh);
@@ -80,7 +80,7 @@ void histoWriter::fill2DHistogram (int scan, int strip, int side, float* data_x,
     gr->Fit(f1, "", "", (scan==test_thresh) ? 100 : 40, 1000);
 
     gr->Write();
-    gr->Draw();
+    //gr->Draw();
 
     TF1 *f2 = new TF1("gauussed","2*[0]*[1] / TMath::Sqrt(TMath::Pi()) * (TMath::Exp(  -1*TMath::Power( [1] * (x-[2]) ,2))  )", 0, 1024);
     f2->SetNpx(1024);
@@ -107,16 +107,58 @@ void histoWriter::fillSummary (int scan, int strip, int side, float* data, int n
     uint16_t start = getDacStartStep(scan, 0);
     uint16_t step  = getDacStartStep(scan, 1);
 
+    // only do this once..
+
+    if (strip==0) {
+
+        if (scan==test_thresh) {
+            h2 -> GetYaxis() ->SetTitle("threshold (mV)");
+            h2 -> GetXaxis() -> SetTitle("channel");
+        }
+        else if (scan==test_offset) {
+            h2->GetYaxis() -> SetTitle("offset (mv)");
+            h2->GetXaxis() -> SetTitle("channel");
+        }
+        else if (scan==test_compout) {
+            h2->GetYaxis() -> SetTitle("amplitude (mv)");
+            h2->GetXaxis() -> SetTitle("halfstrip");
+        }
+        else if (scan==test_compin) {
+            h2->GetYaxis() -> SetTitle("amplitude (mv)");
+            h2->GetXaxis() -> SetTitle("halfstrip");
+        }
+        else {
+            throw std::invalid_argument(TString::Format("fillSummary filling with unknown test=%i",scan));
+        }
+
+        h2 -> SetStats(0);
+        h2->GetXaxis()->SetNdivisions(-16);
+        h2->GetXaxis()->SetBinLabel(1  , "0");
+        h2->GetXaxis()->SetBinLabel(2  , "1");
+        h2->GetXaxis()->SetBinLabel(3  , "2");
+        h2->GetXaxis()->SetBinLabel(4  , "3");
+        h2->GetXaxis()->SetBinLabel(5  , "4");
+        h2->GetXaxis()->SetBinLabel(6  , "5");
+        h2->GetXaxis()->SetBinLabel(7  , "6");
+        h2->GetXaxis()->SetBinLabel(8  , "7");
+        h2->GetXaxis()->SetBinLabel(9  , "8");
+        h2->GetXaxis()->SetBinLabel(10 , "9");
+        h2->GetXaxis()->SetBinLabel(11 , "A");
+        h2->GetXaxis()->SetBinLabel(12 , "B");
+        h2->GetXaxis()->SetBinLabel(13 , "C");
+        h2->GetXaxis()->SetBinLabel(14 , "D");
+        h2->GetXaxis()->SetBinLabel(15 , "E");
+        h2->GetXaxis()->SetBinLabel(16 , "F");
+    }
 
     for (int ibin=0;ibin<n_entries;ibin++) {
 
         float dac = start + ibin*step;
 
-        if      (scan==test_compin)  h2->Fill(side,  dac, 1-data[ibin]+1e-9); // add a tiny offset so that we don't draw as white
-        else if (scan==test_compout) h2->Fill(side,  dac,   data[ibin]+1e-9); // add a tiny offset so that we don't draw as white
-        else                         h2->Fill(strip, dac,   data[ibin]+1e-9); // add a tiny offset so that we don't draw as white
+        if      (scan==test_compin)  h2->SetBinContent(side+1,  ibin+1, 1-data[ibin]); // add a tiny offset so that we don't draw as white
+        else if (scan==test_compout) h2->SetBinContent(side+1,  ibin+1,   data[ibin]); // add a tiny offset so that we don't draw as white
+        else                         h2->SetBinContent(strip+1, ibin+1,   data[ibin]); // add a tiny offset so that we don't draw as white
 
-      //h2->SetBinContent(strip+1, dac+1, data[ibin]+0.000000001);
     }
 }
 
@@ -148,6 +190,9 @@ TH2F* histoWriter::getH2 (int scan, int strip, int side) {
 }
 
 void histoWriter::fillTiming (int pktime, int delta) {
-    TH2F* h2 = h2_timing;
-    h2->Fill(pktime, delta); // add a tiny offset so that we don't draw as white
+    h2_timing->Fill(pktime, delta);
+}
+
+void histoWriter::fillMode (int pktime, int pkmode, int delta) {
+    h2_mode->Fill(pkmode, pktime, delta);
 }
