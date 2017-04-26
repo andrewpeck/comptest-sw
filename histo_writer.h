@@ -3,6 +3,7 @@
 
 #include <TFile.h>
 #include <TH2F.h>
+#include <vector>
 
 #include "board_characteristics.h"
 #include "data.h"
@@ -41,10 +42,34 @@ class histoWriter {
 
         h2_compin    -> GetZaxis() -> SetRangeUser(0, 1); // ... set the range ...
         h2_compout   -> GetZaxis() -> SetRangeUser(0, 1); // ... set the range ...
+
         thresholds_l -> GetZaxis() -> SetRangeUser(0, 1); // ... set the range ...
         thresholds_r -> GetZaxis() -> SetRangeUser(0, 1); // ... set the range ...
         offsets_l    -> GetZaxis() -> SetRangeUser(0, 1); // ... set the range ...
         offsets_r    -> GetZaxis() -> SetRangeUser(0, 1); // ... set the range ...
+
+        std::vector<TH2F*> channels = {thresholds_l, thresholds_r, offsets_l, offsets_r};
+
+        for (auto &h2 : channels) {
+            h2 -> SetStats(0);
+            h2->GetXaxis()->SetNdivisions(-16);
+            h2->GetXaxis()->SetBinLabel(1  , "0");
+            h2->GetXaxis()->SetBinLabel(2  , "1");
+            h2->GetXaxis()->SetBinLabel(3  , "2");
+            h2->GetXaxis()->SetBinLabel(4  , "3");
+            h2->GetXaxis()->SetBinLabel(5  , "4");
+            h2->GetXaxis()->SetBinLabel(6  , "5");
+            h2->GetXaxis()->SetBinLabel(7  , "6");
+            h2->GetXaxis()->SetBinLabel(8  , "7");
+            h2->GetXaxis()->SetBinLabel(9  , "8");
+            h2->GetXaxis()->SetBinLabel(10 , "9");
+            h2->GetXaxis()->SetBinLabel(11 , "A");
+            h2->GetXaxis()->SetBinLabel(12 , "B");
+            h2->GetXaxis()->SetBinLabel(13 , "C");
+            h2->GetXaxis()->SetBinLabel(14 , "D");
+            h2->GetXaxis()->SetBinLabel(15 , "E");
+            h2->GetXaxis()->SetBinLabel(16 , "F");
+        }
 
         //--------------------------------------------------------------------------------------------------------------
 

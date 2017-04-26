@@ -208,7 +208,9 @@ void analyzer (std::string directory="./results") {
 
         c1->cd(i);
 
-        currents_map[channel] ->Draw();
+        TH1F* h1 = currents_map[channel];
+
+        h1 ->Draw();
 
         c1->Update();
 
@@ -234,6 +236,8 @@ void analyzer (std::string directory="./results") {
     c2->cd(4);
     th1_thresh_r -> Draw();
 
+    //-OFFSETS----------------------------------------------------------------------------------------------------------
+
     TCanvas * c3 = new TCanvas ();
     c3->SetWindowSize(512*2,512*2);
     c3->Divide(2,2);
@@ -245,6 +249,8 @@ void analyzer (std::string directory="./results") {
     th1_offset_l -> Draw();
     c3->cd(4);
     th1_offset_r -> Draw();
+
+    //-MISC-------------------------------------------------------------------------------------------------------------
 
     TCanvas * c4 = new TCanvas ();
     c4->SetWindowSize(512*2,512*2);

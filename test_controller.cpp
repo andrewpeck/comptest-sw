@@ -51,23 +51,14 @@ int test_controller  (std::string modem= "/dev/cu.usbmodem401341") {
 
     scanner.setSerialFd (fd);
 
-   //tcflush(fd, TCIOFLUSH); // clear buffer
-
-
     scanner.reset();
-    sleep (2);
-    scanner.flushController();
-    scanner.flushController();
-    scanner.flushController();
-    scanner.flushController();
-    scanner.flushController();
-    scanner.flushController();
-    scanner.flushController();
+    scanner.init();
+    sleep (1);
     scanner.flushController();
     scanner.flushController();
     scanner.flushController();
 
-     tcflush(fd, TCIOFLUSH); // clear buffer
+    tcflush(fd, TCIOFLUSH); // clear buffer
 
      //-----------------------------------------------------------------------------------------------------------------
      // Offsets + Thresholds
@@ -80,15 +71,11 @@ int test_controller  (std::string modem= "/dev/cu.usbmodem401341") {
                  if (iscan==test_offset) scanner.scanOffset(istrip, iside, dac_start_offset, dac_step_offset, num_pulses);
                  else                    scanner.scanThresh(istrip, iside, dac_start_thresh, dac_step_thresh, num_pulses);
 
-                 scanner.flushController();
-
                  convertCounts(data_buf, num_entries, num_pulses);
 
                  writer.fillSummary (iscan, istrip, iside, data_buf, num_entries);
 
      } } }
-
-     scanner.flushController();
 
      //-----------------------------------------------------------------------------------------------------------------
      // Compin
@@ -96,22 +83,18 @@ int test_controller  (std::string modem= "/dev/cu.usbmodem401341") {
 
      scanner.init();
      scanner.setCompin(1);
-     scanner.flushController();
 
      for (int iside = 0; iside < 2; iside++) {
 
          int istrip = 0;
 
-         scanner.scanThresh(istrip, iside, dac_start_thresh, dac_step_thresh, num_pulses);
+         scanner.scanThresh(istrip, iside, dac_start_thresh, dac_step_thresh, 1); // 1=num_pulses
 
-         scanner.flushController();
-
-         convertCounts(data_buf, num_entries, num_pulses);
+         convertCounts(data_buf, num_entries, 1); // 1=num_pulses
 
          writer.fillSummary (test_compin, istrip, iside, data_buf, num_entries);
 
      }
-     scanner.flushController();
 
      //-----------------------------------------------------------------------------------------------------------------
      // Compout
@@ -119,24 +102,16 @@ int test_controller  (std::string modem= "/dev/cu.usbmodem401341") {
 
      scanner.init();
 
-     scanner.flushController();
-
      for (int iside = 0; iside < 2; iside++) {
 
          int istrip = 15;
 
-         scanner.scanCompout(istrip, iside, dac_start_compout, dac_step_compout, num_pulses);
-    //   scanner.scanThresh(istrip, iside, dac_start_thresh, dac_step_thresh, num_pulses);
-
-         scanner.flushController();
+         scanner.scanCompout(istrip, iside, dac_start_compout, dac_step_compout, 1); // 1=num_pulses
 
          convertCounts(data_buf, num_entries, num_pulses);
 
          writer.fillSummary (test_compout, istrip, iside, data_buf, num_entries);
-
      }
-
-     scanner.flushController();
 
      //-----------------------------------------------------------------------------------------------------------------
      // Timing Scan
@@ -154,7 +129,7 @@ int test_controller  (std::string modem= "/dev/cu.usbmodem401341") {
                      writer.fillMode(pktime, imode, delta);
                  }
              }
-     }} }
+     }}}
 
      //-----------------------------------------------------------------------------------------------------------------
      // Currents
@@ -164,12 +139,7 @@ int test_controller  (std::string modem= "/dev/cu.usbmodem401341") {
         scanner.scanCurrent(ichannel);
         convertCurrents(data_buf, num_entries, ichannel);
         writer.fill1DHistogram(test_currents, ichannel, data_buf);
-        scanner.flushController();
     }
-
- // for(auto& iter : params) {
- //     std::cout << "data :: " << iter.first << " = " << iter.second << std::endl;
- // }
 
     hfile->Write();
     close (fd);

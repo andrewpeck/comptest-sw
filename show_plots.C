@@ -70,16 +70,24 @@ void show_plots (std::string name="def") {
 
         autoRange (currents_map[channel] , xmin, xmax);
 
+        xmin = i_mean[channel] - i_spread[channel];
+        xmax = i_mean[channel] + i_spread[channel];
+
         c_currents->cd(i+1);
 
-        currents_map[channel] ->SetFillColor(kRed);
         currents_map[channel] ->Draw();
+
+        TH1F* h1 = currents_map[channel];
+        if ( h1->GetXaxis()->GetBinCenter(h1->FindFirstBinAbove(0,1))   < xmin ||
+             h1->GetXaxis()->GetBinCenter(h1->FindLastBinAbove (0,1))   > xmax)
+            currents_map[channel] ->SetFillColor(kRed);
+        else
+            currents_map[channel] ->SetFillColor(kGreen+1);
+
         currents_map[channel] ->SetDirectory(outfile->GetDirectory(""));
 
         c_currents->Update();
 
-        xmin = i_mean[channel] - i_spread[channel];
-        xmax = i_mean[channel] + i_spread[channel];
 
         drawLimitLines( gPad, xmin, xmax);
 
@@ -231,74 +239,6 @@ void show_plots (std::string name="def") {
 
     th1_thresh_l->SetStats(1);
     th1_thresh_r->SetStats(1);
-
-    //-REFILLING--------------------------------------------------------------------------------------------------------
-
-    //TH2F* raws []      = {offsets_l_raw, offsets_r_raw, thresholds_l_raw, thresholds_r_raw};
-    //TH2F* converted [] = {offsets_l, offsets_r, thresholds_l, thresholds_r};
-
-    //for (int iscan=0; iscan<2; iscan++) {
-    //for (int iside=0; iside<2; iside++) {
-
-    //    converted[iscan*2+iside]->GetXaxis()->SetNdivisions(-16);
-    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(1  , "0");
-    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(2  , "1");
-    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(3  , "2");
-    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(4  , "3");
-    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(5  , "4");
-    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(6  , "5");
-    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(7  , "6");
-    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(8  , "7");
-    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(9  , "8");
-    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(10 , "9");
-    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(11 , "A");
-    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(12 , "B");
-    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(13 , "C");
-    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(14 , "D");
-    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(15 , "E");
-    //    converted[iscan*2+iside]->GetXaxis()->SetBinLabel(16 , "F");
-
-    //    raws[iscan*2+iside]->GetXaxis()->SetNdivisions(-16);
-    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(1  , "0");
-    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(2  , "1");
-    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(3  , "2");
-    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(4  , "3");
-    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(5  , "4");
-    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(6  , "5");
-    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(7  , "6");
-    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(8  , "7");
-    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(9  , "8");
-    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(10 , "9");
-    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(11 , "A");
-    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(12 , "B");
-    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(13 , "C");
-    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(14 , "D");
-    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(15 , "E");
-    //    raws[iscan*2+iside]->GetXaxis()->SetBinLabel(16 , "F");
-
-    //    raws[iscan*2+iside]->SetMaximum(1);
-    //    raws[iscan*2+iside]->SetMinimum(0);
-
-    //    converted[iscan*2+iside]->SetMaximum(1);
-    //    converted[iscan*2+iside]->SetMinimum(0);
-
-
-    //for (int istrip=0; istrip<16; istrip++) {
-    //for (int ibin=0;ibin<1024;ibin++) {
-
-    //        int    strip     = istrip;
-    //        float  errors    = raws[iscan*2+iside]->GetBinContent(istrip+1, ibin+1);
-
-    //        converted[iscan*2+iside]-> SetBinContent(strip+1, ibin+1, errors);
-
-
-    //} } } }
-
-//    thresholds_l = thresholds_l_raw ;
-//    thresholds_r = thresholds_r_raw ;
-//    offsets_l    = offsets_l_raw    ;
-//    offsets_r    = offsets_r_raw    ;
-
 
     //------------------------------------------------------------------------------------------------------------------
     //
@@ -453,13 +393,17 @@ void show_plots (std::string name="def") {
 
         float p0 = f1->GetParameter(0);
         float p1 = f1->GetParameter(1);
+        float chi2 = f1->GetChisquare();
 
         // just check whether the fit failed
         bool fail=0;
-        if (p0>100 || p0<0) {
+        if (chi2 > 5) {
             fail=true;
         }
-        if (p1<0) {
+        if (p0<0) {
+            fail=true;
+        }
+        if (p1>800) {
             fail=true;
         }
 

@@ -17,10 +17,10 @@ static std::map <std::string, float> i_mean = {
     };
 
 static std::map <std::string, float> i_spread = {
-        {"iamp"   , 1.0 },
-        {"ioff"   , 0.3 },
-        {"ibias"  , 0.05},
-        {"ifamp"  , 0.05},
+        {"iamp"   , 0.5 },
+        {"ioff"   , 0.1 },
+        {"ibias"  , 0.09},
+        {"ifamp"  , 0.07},
         {"i5v0"   , 3.0 },
         {"i3v3"   , 2.0 },
     };
