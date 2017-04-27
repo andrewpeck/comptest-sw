@@ -182,6 +182,16 @@ void analyzer (std::string directory="./results") {
 
     gStyle->SetPalette(1);
 
+    //const int NRGBs = 4, NCont = 100;
+    //gStyle->SetNumberContours(NCont);
+    ////                        white -->
+    //Double_t stops [NRGBs] = { 0.25, 0.45, 0.60, 0.75};
+    //Double_t red   [NRGBs] = { 0.00, 0.00, 0.97, 0.97};
+    //Double_t green [NRGBs] = { 0.30, 0.40, 0.97, 0.00};
+    //Double_t blue  [NRGBs] = { 0.97, 0.00, 0.00, 0.00};
+
+    //TColor::CreateGradientColorTable(NRGBs, stops, red, green, blue, NCont);
+
 
     //-CURRENTS---------------------------------------------------------------------------------------------------------
 
@@ -201,8 +211,8 @@ void analyzer (std::string directory="./results") {
     int i=1;
     for(auto& channel : currents_vec) {
 
-        double xmin = i_mean[channel] - i_spread[channel]*2;
-        double xmax = i_mean[channel] + i_spread[channel]*2;
+        double xmin = mean[channel] - spread[channel]*2;
+        double xmax = mean[channel] + spread[channel]*2;
 
         autoRange (currents_map[channel] , xmin, xmax);
 
@@ -214,41 +224,74 @@ void analyzer (std::string directory="./results") {
 
         c1->Update();
 
-        xmin = i_mean[channel] - i_spread[channel];
-        xmax = i_mean[channel] + i_spread[channel];
+        xmin = mean[channel] - spread[channel];
+        xmax = mean[channel] + spread[channel];
 
-        drawLimitLines(gPad, xmin, xmax);
+        drawLimitVlines (gPad, xmin, xmax);
 
         i++;
     }
 
     //-THREHSOLDS-------------------------------------------------------------------------------------------------------
 
+    std::map <std::string, TH2F*> meas_map;
+
+    meas_map ["thresh_l"]  = thresholds_l;
+    meas_map ["thresh_r"]  = thresholds_r;
+    meas_map ["offset_l"]  = offsets_l;
+    meas_map ["offset_r"]  = offsets_r;
+
+    std::map <std::string, TH1F*> meas_map_h1;
+
+    meas_map_h1 ["thresh_l"]  = th1_thresh_l;
+    meas_map_h1 ["thresh_r"]  = th1_thresh_r;
+    meas_map_h1 ["offset_l"]  = th1_offset_l;
+    meas_map_h1 ["offset_r"]  = th1_offset_r;
+
     TCanvas * c2 = new TCanvas ();
     c2->SetWindowSize(512*2,512*2);
     c2->Divide(2,2);
-    c2->cd(1);
-    thresholds_l->Draw("COLZ");
-    c2->cd(2);
-    thresholds_r->Draw("COLZ");
-    c2->cd(3);
-    th1_thresh_l -> Draw();
-    c2->cd(4);
-    th1_thresh_r -> Draw();
-
-    //-OFFSETS----------------------------------------------------------------------------------------------------------
 
     TCanvas * c3 = new TCanvas ();
     c3->SetWindowSize(512*2,512*2);
     c3->Divide(2,2);
-    c3->cd(1);
-    offsets_l->Draw("COLZ");
-    c3->cd(2);
-    offsets_r->Draw("COLZ");
-    c3->cd(3);
-    th1_offset_l -> Draw();
-    c3->cd(4);
-    th1_offset_r -> Draw();
+
+    int ipad=1;
+    for (auto & channel : meas_vec) {
+        TCanvas* c;
+        if (channel=="thresh_r" || channel=="thresh_l")
+            c = c2;
+        else
+            c = c3;
+
+        TH2F* h2 = meas_map[channel];
+        TH1F* h1 = meas_map_h1[channel];
+
+        c->cd (ipad);
+
+        h2 -> SetOption("COLZ");
+        h2->Draw();
+        h2->SetContour(100);
+        c->Update();
+
+        double ymin = mean[channel] - spread[channel];
+        double ymax = mean[channel] + spread[channel];
+        drawLimitHlines(gPad, ymin, ymax);
+
+        c->cd (ipad+2);
+
+        h1->Draw();
+        h1->SetContour(100);
+        c->Update();
+        drawLimitVlines(gPad, ymin, ymax);
+
+        ipad++;
+        if (ipad==3)
+            ipad=1;
+    }
+
+    // draw now
+    gSystem->ProcessEvents();
 
     //-MISC-------------------------------------------------------------------------------------------------------------
 

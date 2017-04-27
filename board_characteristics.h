@@ -7,14 +7,14 @@
 
 static const int dac_start   = 20;
 static const int dac_step    = 1;
-static const int num_pulses  = 10;
+static const int num_pulses  = 20;
 static const int num_entries = 1024;
 
 static const int dac_start_thresh   = 10;
 static const int dac_step_thresh    = 1;
 
 static const int dac_start_offset   = 10;
-static const int dac_step_offset    = 1;
+static const int dac_step_offset    = 2;
 
 static const int dac_start_compout   = 10;
 static const int dac_step_compout    = 10;

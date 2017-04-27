@@ -65,13 +65,13 @@ void show_plots (std::string name="def") {
     int i=0;
     for(auto& channel : currents_vec) {
 
-        double xmin = i_mean[channel] - i_spread[channel]*2;
-        double xmax = i_mean[channel] + i_spread[channel]*2;
+        double xmin = mean[channel] - spread[channel]*2;
+        double xmax = mean[channel] + spread[channel]*2;
 
         autoRange (currents_map[channel] , xmin, xmax);
 
-        xmin = i_mean[channel] - i_spread[channel];
-        xmax = i_mean[channel] + i_spread[channel];
+        xmin = mean[channel] - spread[channel];
+        xmax = mean[channel] + spread[channel];
 
         c_currents->cd(i+1);
 
@@ -89,7 +89,7 @@ void show_plots (std::string name="def") {
         c_currents->Update();
 
 
-        drawLimitLines( gPad, xmin, xmax);
+        drawLimitVlines ( gPad, xmin, xmax);
 
         i++;
     }
@@ -98,7 +98,7 @@ void show_plots (std::string name="def") {
     gSystem->ProcessEvents();
 
     //------------------------------------------------------------------------------------------------------------------
-    //
+    // Misc Plots
     //------------------------------------------------------------------------------------------------------------------
 
     TCanvas * c9 = new TCanvas ();
@@ -106,9 +106,7 @@ void show_plots (std::string name="def") {
     c9->Divide(2,2);
     c9->cd();
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Peak Timing
-    //------------------------------------------------------------------------------------------------------------------
+    //-PEAK TIMING------------------------------------------------------------------------------------------------------
 
     TH2F* h2_timing = (TH2F*) hfile -> Get ("h2_timing");
     h2_timing->SetStats(0);
@@ -117,9 +115,7 @@ void show_plots (std::string name="def") {
     h2_timing->Draw();
     h2_timing ->SetDirectory(outfile->GetDirectory(""));
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Peak Mode
-    //------------------------------------------------------------------------------------------------------------------
+    //-PEAK MODE--------------------------------------------------------------------------------------------------------
 
     TH2F* h2_mode = (TH2F*) hfile -> Get ("h2_mode");
 
@@ -149,9 +145,7 @@ void show_plots (std::string name="def") {
     h2_mode ->SetDirectory(outfile->GetDirectory(""));
 
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Compin
-    //------------------------------------------------------------------------------------------------------------------
+    //-COMPIN-----------------------------------------------------------------------------------------------------------
 
     c9->cd (3);
 
@@ -166,9 +160,7 @@ void show_plots (std::string name="def") {
     c9->Update();
     gSystem->ProcessEvents();
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Compout
-    //------------------------------------------------------------------------------------------------------------------
+    //-COMPOUT----------------------------------------------------------------------------------------------------------
 
     c9->cd (4);
 
@@ -185,7 +177,7 @@ void show_plots (std::string name="def") {
     gSystem->ProcessEvents();
 
     //------------------------------------------------------------------------------------------------------------------
-    //
+    // Thresholds & Offsets
     //------------------------------------------------------------------------------------------------------------------
 
     TH2F* thresholds_l = (TH2F*) hfile -> Get ("thresholds_l");
@@ -193,19 +185,14 @@ void show_plots (std::string name="def") {
     TH2F* offsets_l    = (TH2F*) hfile -> Get ("offsets_l");
     TH2F* offsets_r    = (TH2F*) hfile -> Get ("offsets_r");
 
-    thresholds_l ->SetDirectory(outfile->GetDirectory(""));
-    thresholds_r ->SetDirectory(outfile->GetDirectory(""));
-    offsets_l ->SetDirectory(outfile->GetDirectory(""));
-    offsets_r ->SetDirectory(outfile->GetDirectory(""));
+    thresholds_l -> SetDirectory(outfile -> GetDirectory(""));
+    thresholds_r -> SetDirectory(outfile -> GetDirectory(""));
+    offsets_l    -> SetDirectory(outfile -> GetDirectory(""));
+    offsets_r    -> SetDirectory(outfile -> GetDirectory(""));
 
     hfile->Close();
 
-
-
-
-
-
-    //-THRESHOLDS-------------------------------------------------------------------------------------------------------
+    //-THRESHOLDS-H1----------------------------------------------------------------------------------------------------
 
     float max;
     float min;
@@ -224,7 +211,7 @@ void show_plots (std::string name="def") {
     th1_thresh_l->SetStats(1);
     th1_thresh_r->SetStats(1);
 
-    //-OFFSETS----------------------------------------------------------------------------------------------------------
+    //-OFFSETS-H1-------------------------------------------------------------------------------------------------------
 
     min=convertBin(test_offset, 1);
     max=convertBin(test_offset, 1024);
@@ -244,44 +231,37 @@ void show_plots (std::string name="def") {
     //
     //------------------------------------------------------------------------------------------------------------------
 
-#ifdef DRAWFITS
-    TCanvas * c2 = new TCanvas ();
-    c2->SetWindowSize(2400,1280);
-    c2->Divide(8,2);
 
-    TCanvas * c3 = new TCanvas ();
-    c3->SetWindowSize(2400,1280);
-    c3->Divide(8,2);
+    std::map <std::string, TH2F*> meas_map;
 
-    TCanvas * c4 = new TCanvas ();
-    c4->SetWindowSize(2400,1280);
-    c4->Divide(8,2);
+    meas_map ["thresh_l"]  = thresholds_l;
+    meas_map ["thresh_r"]  = thresholds_r;
+    meas_map ["offset_l"]  = offsets_l;
+    meas_map ["offset_r"]  = offsets_r;
 
-    TCanvas * c5 = new TCanvas ();
-    c5->SetWindowSize(2400,1280);
-    c5->Divide(8,2);
-#endif
+    std::map <std::string, TH1F*> meas_map_h1;
+
+    meas_map_h1 ["thresh_l"]  = th1_thresh_l;
+    meas_map_h1 ["thresh_r"]  = th1_thresh_r;
+    meas_map_h1 ["offset_l"]  = th1_offset_l;
+    meas_map_h1 ["offset_r"]  = th1_offset_r;
 
 
-    c1->cd(1);
-    offsets_l->SetOption("COLZ");
-    offsets_l->Draw();
-    offsets_l->SetContour(100);
+    int ipad=1;
+    for (auto & channel : meas_vec) {
+        c1->cd(ipad);
+        TH2F* h2 = meas_map[channel];
+        h2 -> SetOption("COLZ");
+        h2->Draw();
+        h2->SetContour(100);
+        c1->Update();
 
-    c1->cd(2);
-    offsets_r->SetOption("COLZ");
-    offsets_r->Draw();
-    offsets_r->SetContour(100);
+        double ymin = mean[channel] - spread[channel];
+        double ymax = mean[channel] + spread[channel];
+        drawLimitHlines(gPad, ymin, ymax);
 
-    c1->cd(3);
-    thresholds_l->SetOption("COLZ");
-    thresholds_l->Draw();
-    thresholds_l->SetContour(100);
-
-    c1->cd(4);
-    thresholds_r->SetOption("COLZ");
-    thresholds_r->Draw();
-    thresholds_r->SetContour(100);
+        ipad++;
+    }
 
     c1->Modified();
     c1->Update();
@@ -292,6 +272,25 @@ void show_plots (std::string name="def") {
 
 
     c1->cd(5);
+
+#ifdef DRAWFITS
+    TCanvas * c2 = new TCanvas ();
+    c2->SetWindowSize(4*320,4*320);
+    c2->Divide(4,4);
+
+    TCanvas * c3 = new TCanvas ();
+    c3->SetWindowSize(4*320,4*320);
+    c3->Divide(4,4);
+
+    TCanvas * c4 = new TCanvas ();
+    c4->SetWindowSize(4*320,4*320);
+    c4->Divide(4,4);
+
+    TCanvas * c5 = new TCanvas ();
+    c5->SetWindowSize(4*320,4*320);
+    c5->Divide(4,4);
+#endif
+
 
     float err_rate [1024];
     float bin [1024];
@@ -306,194 +305,171 @@ void show_plots (std::string name="def") {
     TMarker* marks  [16];
 
 
-    for (int iscan=0; iscan<2; iscan++) {
-    for (int iside=0; iside<2; iside++) {
+    ipad = 1;
+    for (auto& channel : meas_vec) {
 
-    TH2F* h2;
+            TH2F* h2 = meas_map[channel];
+            TH1F* h1 = meas_map_h1[channel];
 
-    TH1F* h1;
+            for (int istrip=0; istrip<16; istrip++) {
 
-    if (iscan==test_thresh && iside==0) {
-        h2 = thresholds_l;
-        h1 = th1_thresh_l;
-    }
-    else if  (iscan==test_thresh && iside==1) {
-        h2 = thresholds_r;
-        h1 = th1_thresh_r;
-    }
-    else if (iscan==test_offset && iside==0) {
-        h2 = offsets_l;
-        h1 = th1_offset_l;
-    }
-    else if (iscan==test_offset && iside==1) {
-        h2 = offsets_r;
-        h1 = th1_offset_r;
-    }
+                for (int ibin=0;ibin<1024;ibin++) {
+                    err_rate [ibin] = h2->GetBinContent(istrip+1, ibin+1);
+                    bin [ibin] = ibin;
+                }
 
-    for (int istrip=0; istrip<16; istrip++) {
+                //--------------------------------------------------------------------------------------------------------------
+                //
+                //--------------------------------------------------------------------------------------------------------------
 
-        for (int ibin=0;ibin<1024;ibin++) {
-            err_rate [ibin] = h2->GetBinContent(istrip+1, ibin+1);
-            bin [ibin] = ibin;
-        }
+                TGraph* gr = new TGraph(1024,bin,err_rate);
+                gStyle->SetOptFit();
 
-        //--------------------------------------------------------------------------------------------------------------
-        //
-        //--------------------------------------------------------------------------------------------------------------
+                graphs[istrip] = gr;
 
-        TGraph* gr = new TGraph(1024,bin,err_rate);
-        gStyle->SetOptFit();
+                char *name;
+                char *title;
 
-        graphs[istrip] = gr;
+                asprintf(&name, "%s_%d",          channel.c_str(), istrip);
+                asprintf(&title,"%s Channel %d",  channel.c_str(), istrip);
 
-        const char* side_str_short [] = {"l",   "r"  };
-        const char* side_str_long  [] = {"l>r", "r>l"};
+                gr->SetName(name);
+                gr->SetTitle(title);
 
-        char *name;
-        char *title;
+                TF1 *f1 = new TF1("fit","1.0/2*(1-TMath::Erf(1/[0]*(x-[1])))", 0, 1024);
 
-        asprintf(&name, "%s_%s%d",          testname[iscan], side_str_short[iside], istrip);
-        asprintf(&title,"%s %s Channel %d", testname[iscan], side_str_long [iside],  istrip);
-
-        gr->SetName(name);
-        gr->SetTitle(title);
-
-        TF1 *f1 = new TF1("fit","1.0/2*(1-TMath::Erf(1/[0]*(x-[1])))", 0, 1024);
-
-        //std::cout << "fitting on strip " << istrip << std::endl;
+                //std::cout << "fitting on strip " << istrip << std::endl;
 
 #ifdef FITS
-        if (iscan==test_thresh) {
-            f1->SetParLimits(0, 0.01,5);
-            f1->SetParLimits(1, 0,600);
+                if (channel=="thresh_l" || channel=="thresh_r") {
+                    f1->SetParLimits(0, 0.01,5);
+                    f1->SetParLimits(1, 0,600);
 
-            f1->SetParameter(0, 0.01);
-            f1->SetParameter(1, 100);
+                    f1->SetParameter(0, 0.01);
+                    f1->SetParameter(1, 100);
 
-            gr->Fit("fit", "QMWC", "", 0, 512);
-        }
-        else if (iscan==test_offset) {
+                    gr->Fit("fit", "QMWC", "", 0, 512);
+                }
+                else if (channel=="offset_l" || channel=="offset_r") {
 
-            f1->SetParLimits(1, 0,1023);
+                    f1->SetParLimits(1, 0,1023);
 
-            if (iside==0) { // l>r
-                f1->SetParLimits(0, 0.01,40);
-                f1->SetParameter(0, 0.01     );
-                f1->SetParameter(1, 200 );
-                gr->Fit("fit", "QMWC", "", 0, 1024);
-            }
-            else {
-                f1->SetParLimits(0, 0.01,10);
-                f1->SetParameter(0, 0.01  );
-                f1->SetParameter(1, 60 );
-                gr->Fit("fit", "QMWC", "", 0, 512);
-            }
-        }
+                    if (channel=="offset_l") { // l>r
+                        f1->SetParLimits(0, 0.01,40);
+                        f1->SetParameter(0, 0.01     );
+                        f1->SetParameter(1, 200 );
+                        gr->Fit("fit", "QMWC", "", 0, 1024);
+                    }
+                    else if (channel=="offset_r") {
+                        f1->SetParLimits(0, 0.01,10);
+                        f1->SetParameter(0, 0.01  );
+                        f1->SetParameter(1, 60 );
+                        gr->Fit("fit", "QMWC", "", 0, 512);
+                    }
+                }
 #endif
 
-        float p0 = f1->GetParameter(0);
-        float p1 = f1->GetParameter(1);
-        float chi2 = f1->GetChisquare();
+                float p0 = f1->GetParameter(0);
+                float p1 = f1->GetParameter(1);
+                float chi2 = f1->GetChisquare();
 
-        // just check whether the fit failed
-        bool fail=0;
-        if (chi2 > 5) {
-            fail=true;
-        }
-        if (p0<0) {
-            fail=true;
-        }
-        if (p1>800) {
-            fail=true;
-        }
+                // just check whether the fit failed
+                bool fail=0;
+                if (chi2 > 10) {
+                    fail=true;
+                }
+                if (p0<0) {
+                    fail=true;
+                }
+                if (p1>800) {
+                    fail=true;
+                }
 
 #ifdef FITS
-        if (fail) {
-            gr->GetFunction("fit")->SetLineColor(kRed);
-            std::cout << "Failed to fit on test=" << std::endl;
-            printf("Failed to fit on test=%i, side=%i\n", iscan, iside);
-        }
-        else {
-            gr->GetFunction("fit")->SetLineColor(kGreen+3);
-        }
+                if (fail) {
+                    gr->GetFunction("fit")->SetLineColor(kRed);
+                    printf("Failed to fit on %s strip %i\n", channel.c_str(), istrip);
+                }
+                else {
+                    gr->GetFunction("fit")->SetLineColor(kGreen+3);
+                }
 #endif
 
-                         // TF1 *f2  = new TF1("gauussed","2*[0]*[1] / TMath::Sqrt(TMath::Pi()) * (TMath::Exp(  -1*TMath::Power( [1] * (x-[2]) ,2))  )", 0, 1024);
-                         // f2->SetNpx(1024);
-                         // f1->SetNpx(1024);
+                if (fail) {
+                    fit_width  [istrip] = f1->GetParameter(0);
+                    fit_thresh [istrip] = f1->GetParameter(1);
+                    std::cout << "fail xmax=" << fit_thresh[istrip] << std::endl;
 
-                         // f2->SetParameter(0, p0);
-                         // f2->SetParameter(1, p1);
-                         // f2->SetParameter(2, p2);
+                }
+                else {
+                    fit_width  [istrip] = f1->GetParameter(0);
+                    fit_thresh [istrip] = f1->GetParameter(1);
+                }
 
-        if (fail) {
-            fit_width  [istrip] = f1->GetParameter(0);
-            fit_thresh [istrip] = f1->GetParameter(1);
-            std::cout << "fail xmax=" << fit_thresh[istrip] << std::endl;
+                //--------------------------------------------------------------------------------------------------------------
 
-        }
-        else {
-            fit_width  [istrip] = f1->GetParameter(0);
-            fit_thresh [istrip] = f1->GetParameter(1);
-        }
+                int iscan = (channel=="thresh_r" || channel=="thresh_l") ? test_thresh : test_offset;
+                double val = (fail) ? h1->GetXaxis()->GetXmax() - 1e-9 : convertBin(iscan, fit_thresh[istrip]);
 
-        //--------------------------------------------------------------------------------------------------------------
-
-        double val = (fail) ? h1->GetXaxis()->GetXmax() - 1e-9 : convertBin(iscan, fit_thresh[istrip]);
-        //std::cout << "val=" << val << std::endl;
-
-        h1->Fill(val);
+                h1->Fill(val);
 
 #ifdef DRAWFITS
-         if (iscan==0 && iside==0) {
-             c2->cd(istrip+1);
-             gPad->DrawFrame(0,0, 300, 1.1);
-             gr->Draw("SAME, *A");
-             gr-> SetMarkerStyle(3);
-         }
-         else if (iscan==0 && iside==1) {
-             c3->cd(istrip+1);
-             gPad->DrawFrame(0,0, 300, 1.1);
-             gr->Draw("SAME, *A");
-             gr-> SetMarkerStyle(3);
-         }
-         else if (iscan==1 && iside==0) {
-             c4->cd(istrip+1);
-             gPad->DrawFrame(0,0, 300, 1.1);
-             gr->Draw("SAME, *A");
-             gr-> SetMarkerStyle(3);
-         }
-         else if (iscan==1 && iside==1) {
-             c5->cd(istrip+1);
-             gPad->DrawFrame(0,0, 300, 1.1);
-             gr->Draw("SAME, *A");
-             gr-> SetMarkerStyle(3);
-         }
+                if (channel=="offset_l") {
+                    c2->cd(istrip+1);
+                    gPad->DrawFrame(0,0, 300, 1.1);
+                    gr->Draw("SAME, *A");
+                    gr-> SetMarkerStyle(3);
+                }
+                else if (channel=="offset_r") {
+                    c3->cd(istrip+1);
+                    gPad->DrawFrame(0,0, 300, 1.1);
+                    gr->Draw("SAME, *A");
+                    gr-> SetMarkerStyle(3);
+                }
+                else if (channel=="thresh_l") {
+                    c4->cd(istrip+1);
+                    gPad->DrawFrame(0,0, 300, 1.1);
+                    gr->Draw("SAME, *A");
+                    gr-> SetMarkerStyle(3);
+                }
+                else if (channel=="thresh_r") {
+                    c5->cd(istrip+1);
+                    gPad->DrawFrame(0,0, 300, 1.1);
+                    gr->Draw("SAME, *A");
+                    gr-> SetMarkerStyle(3);
+                }
+                gSystem->ProcessEvents();
 #endif
 
-        c1->cd(2*iscan+iside+1);
+                c1->cd(ipad);
 
-        TMarker * mark = new TMarker (0.5+double(istrip), val, 3);
+                TMarker * mark = new TMarker (0.5+double(istrip), val, 3);
 
-        TAxis *yaxis = h2->GetYaxis();
-        Double_t binCenter = yaxis->GetBinCenter(50);
+                TAxis *yaxis = h2->GetYaxis();
+                Double_t binCenter = yaxis->GetBinCenter(50);
 
-        if (fail) {
-            mark->SetY (-1 * binCenter);
-            mark->SetMarkerColor(kRed);
-            mark->SetMarkerSize(2);
-        }
+                if (fail) {
+                    mark->SetY (-1 * binCenter);
+                    mark->SetMarkerColor(kRed);
+                    mark->SetMarkerSize(2);
+                }
 
-        mark->Draw("SAME");
+                mark->Draw("SAME");
 
-    }
+            }
 
-    c1->cd (5+2*iscan+iside);
-    h1->SetFillColor(kBlue-10);
-    h1->Draw();
-    gSystem->ProcessEvents();
+            c1->cd (4+ipad);
+            h1->SetFillColor(kBlue-10);
+            h1->Draw();
+            c1->Update();
 
-    }
+            double xmin = mean[channel] - spread[channel];
+            double xmax = mean[channel] + spread[channel];
+            drawLimitVlines(gPad, xmin, xmax);
+
+            gSystem->ProcessEvents();
+
+            ipad++;
     }
 
     c1->cd();
