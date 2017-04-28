@@ -126,7 +126,9 @@ int test_controller  (std::string modem= "/dev/cu.usbmodem401341") {
 
                      if (imode==2) writer.fillTiming(pktime, delta);
 
-                     writer.fillMode(pktime, imode, delta);
+                     if (delta!=255) {
+                         writer.fillMode(pktime, imode, delta);
+                     }
                  }
              }
      }}}
