@@ -14,6 +14,7 @@
 #include <TSystem.h>
 #include <TSystemFile.h>
 #include <TSystemDirectory.h>
+#include <TRegexp.h>
 #include "autorange.h"
 
 #define FITS 1
@@ -21,7 +22,22 @@
                   //int argc, char* argv []
 
 
-void analyzer (std::string directory="./results") {
+void analyzer (std::string path="./results/*") {
+
+    int fname_start = path.find_last_of("\\/");
+
+    std::cout << path.substr(0, fname_start+1) << std::endl;
+    std::cout << path.substr(0, fname_start+1) << std::endl;
+
+    std::string directory = path.substr(0, fname_start+1);
+    std::string file      = path.substr(fname_start+1);
+
+    TRegexp fexp (file.c_str(), true);
+    //TRegexp fexp ("def", true);
+    //TRegexp fexp ("*", true);
+
+    std::cout << path.substr(fname_start+1) << std::endl;
+    std::cout << path.substr(fname_start+1) << std::endl;
 
     TSystemDirectory dir(directory.c_str(), directory.c_str());
 
@@ -39,13 +55,16 @@ void analyzer (std::string directory="./results") {
 
             fname = file->GetName();
 
-            if (!(file->IsDirectory()) && fname.EndsWith(".root")) {
+            if (!(file->IsDirectory()) && fname.EndsWith(".root") && fname.Contains(fexp)) {
                 std::cout << "    " << std::string(fname.Data()) << std::endl;
                 file_vec.push_back(directory+"/"+std::string(fname.Data()));
             }
 
         }
     }
+
+    if (file_vec.size() <1)
+        return;
 
     TH1F* iamp  ;
     TH1F* ioff  ;
@@ -86,6 +105,11 @@ void analyzer (std::string directory="./results") {
         num_files ++;
 
         TFile* hfile = new TFile(filename.c_str(),"READ","");
+
+        if (hfile<=0) {
+            printf("no file\r\n");
+            break;
+        }
 
         if (first) {
 
@@ -174,6 +198,8 @@ void analyzer (std::string directory="./results") {
             th1_offset_r -> Add((TH2F*) hfile -> Get ("th1_offset_r"));
 
         }
+
+        hfile->Close();
     }
 
     h2_compin  -> GetZaxis() -> SetRangeUser(0,num_files);

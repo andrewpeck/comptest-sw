@@ -1,4 +1,3 @@
-
 #include "autorange.h"
 #include "drawLimitLines.h"
 #include "limits.h"
@@ -20,22 +19,19 @@
 #define DRAWFITS 1
                   //int argc, char* argv []
 
-void show_plots (std::string name="def") {
+void show_plots () {
 
     gStyle->SetPalette(1);
 
-
     TFile* hfile = new TFile("tmp.root","READ","TMB Queue Model");
 
+    //std::string logfile = std::string("./results/") + name + ".root";
 
-    std::string logfile = std::string("./results/") + name + ".root";
-
-    TFile* outfile = new TFile(logfile.c_str(),"RECREATE","LCT Comparator Test Results");
-
+    TFile* outfile = new TFile("tmp2.root","RECREATE","LCT Comparator Test Results");
 
     TCanvas * c1 = new TCanvas ();
-    c1->SetWindowSize(512*4,512*2);
-    c1->Divide(4,2);
+    c1->SetWindowSize(512*2,512*2);
+    c1->Divide(2,2);
     c1->cd();
 
     //------------------------------------------------------------------------------------------------------------------
@@ -170,8 +166,8 @@ void show_plots (std::string name="def") {
     compout ->SetDirectory(outfile->GetDirectory(""));
 
     compout->SetOption("COLZ");
-    compout->Draw();
     compout->SetContour(100);
+    compout->Draw();
 
     c9->Update();
     gSystem->ProcessEvents();
@@ -192,41 +188,6 @@ void show_plots (std::string name="def") {
 
     hfile->Close();
 
-    //-THRESHOLDS-H1----------------------------------------------------------------------------------------------------
-
-    float max;
-    float min;
-
-    min=convertBin(test_thresh, 1);
-    max=convertBin(test_thresh, 1024);
-
-    TH1F* th1_thresh_l = new TH1F ("th1_thresh_l", "thresh l>r",  max*4, 0, max);
-    TH1F* th1_thresh_r = new TH1F ("th1_thresh_r", "thresh r>l",  max*4, 0, max);
-
-    th1_thresh_l->GetXaxis() -> SetTitle("threshold (mv)");
-    th1_thresh_l->GetYaxis() -> SetTitle("counts");
-    th1_thresh_r->GetXaxis() -> SetTitle("threshold (mv)");
-    th1_thresh_r->GetYaxis() -> SetTitle("counts");
-
-    th1_thresh_l->SetStats(1);
-    th1_thresh_r->SetStats(1);
-
-    //-OFFSETS-H1-------------------------------------------------------------------------------------------------------
-
-    min=convertBin(test_offset, 1);
-    max=convertBin(test_offset, 1024);
-
-    TH1F* th1_offset_l = new TH1F ("th1_offset_l", "offset l>r",  max*4, 0, max);
-    TH1F* th1_offset_r = new TH1F ("th1_offset_r", "offset r>l",  max*4, 0, max);
-
-    th1_offset_l->GetXaxis() -> SetTitle("offset (mv)");
-    th1_offset_l->GetYaxis() -> SetTitle("counts");
-    th1_offset_r->GetXaxis() -> SetTitle("offset (mv)");
-    th1_offset_r->GetYaxis() -> SetTitle("counts");
-
-    th1_thresh_l->SetStats(1);
-    th1_thresh_r->SetStats(1);
-
     //------------------------------------------------------------------------------------------------------------------
     //
     //------------------------------------------------------------------------------------------------------------------
@@ -239,21 +200,16 @@ void show_plots (std::string name="def") {
     meas_map ["offset_l"]  = offsets_l;
     meas_map ["offset_r"]  = offsets_r;
 
-    std::map <std::string, TH1F*> meas_map_h1;
-
-    meas_map_h1 ["thresh_l"]  = th1_thresh_l;
-    meas_map_h1 ["thresh_r"]  = th1_thresh_r;
-    meas_map_h1 ["offset_l"]  = th1_offset_l;
-    meas_map_h1 ["offset_r"]  = th1_offset_r;
-
 
     int ipad=1;
     for (auto & channel : meas_vec) {
+
         c1->cd(ipad);
+
         TH2F* h2 = meas_map[channel];
         h2 -> SetOption("COLZ");
-        h2->Draw();
         h2->SetContour(100);
+        h2->Draw();
         c1->Update();
 
         double ymin = mean[channel] - spread[channel];
@@ -269,212 +225,7 @@ void show_plots (std::string name="def") {
     // draw now
     gSystem->ProcessEvents();
 
-
-
     c1->cd(5);
 
-#ifdef DRAWFITS
-    TCanvas * c2 = new TCanvas ();
-    c2->SetWindowSize(4*320,4*320);
-    c2->Divide(4,4);
-
-    TCanvas * c3 = new TCanvas ();
-    c3->SetWindowSize(4*320,4*320);
-    c3->Divide(4,4);
-
-    TCanvas * c4 = new TCanvas ();
-    c4->SetWindowSize(4*320,4*320);
-    c4->Divide(4,4);
-
-    TCanvas * c5 = new TCanvas ();
-    c5->SetWindowSize(4*320,4*320);
-    c5->Divide(4,4);
-#endif
-
-
-    float err_rate [1024];
-    float bin [1024];
-
-    float fit_thresh [16];
-    float fit_span   [16];
-    float fit_width  [16];
-
-    TGraph*  graphs [16];
-    TF1*     fits   [16];
-
-    TMarker* marks  [16];
-
-
-    ipad = 1;
-    for (auto& channel : meas_vec) {
-
-            TH2F* h2 = meas_map[channel];
-            TH1F* h1 = meas_map_h1[channel];
-
-            for (int istrip=0; istrip<16; istrip++) {
-
-                for (int ibin=0;ibin<1024;ibin++) {
-                    err_rate [ibin] = h2->GetBinContent(istrip+1, ibin+1);
-                    bin [ibin] = ibin;
-                }
-
-                //--------------------------------------------------------------------------------------------------------------
-                //
-                //--------------------------------------------------------------------------------------------------------------
-
-                TGraph* gr = new TGraph(1024,bin,err_rate);
-                gStyle->SetOptFit();
-
-                graphs[istrip] = gr;
-
-                char *name;
-                char *title;
-
-                asprintf(&name, "%s_%d",          channel.c_str(), istrip);
-                asprintf(&title,"%s Channel %d",  channel.c_str(), istrip);
-
-                gr->SetName(name);
-                gr->SetTitle(title);
-
-                TF1 *f1 = new TF1("fit","1.0/2*(1-TMath::Erf(1/[0]*(x-[1])))", 0, 1024);
-
-                //std::cout << "fitting on strip " << istrip << std::endl;
-
-#ifdef FITS
-                if (channel=="thresh_l" || channel=="thresh_r") {
-                    f1->SetParLimits(0, 0.01,5);
-                    f1->SetParLimits(1, 0,600);
-
-                    f1->SetParameter(0, 0.01);
-                    f1->SetParameter(1, 100);
-
-                    gr->Fit("fit", "QMWC", "", 0, 512);
-                }
-                else if (channel=="offset_l" || channel=="offset_r") {
-
-                    f1->SetParLimits(1, 0,1023);
-
-                    if (channel=="offset_l") { // l>r
-                        f1->SetParLimits(0, 0.01,40);
-                        f1->SetParameter(0, 0.01     );
-                        f1->SetParameter(1, 200 );
-                        gr->Fit("fit", "QMWC", "", 0, 1024);
-                    }
-                    else if (channel=="offset_r") {
-                        f1->SetParLimits(0, 0.01,10);
-                        f1->SetParameter(0, 0.01  );
-                        f1->SetParameter(1, 60 );
-                        gr->Fit("fit", "QMWC", "", 0, 512);
-                    }
-                }
-#endif
-
-                float p0 = f1->GetParameter(0);
-                float p1 = f1->GetParameter(1);
-                float chi2 = f1->GetChisquare();
-
-                // just check whether the fit failed
-                bool fail=0;
-                if (chi2 > 10) {
-                    fail=true;
-                }
-                if (p0<0) {
-                    fail=true;
-                }
-                if (p1>800) {
-                    fail=true;
-                }
-
-#ifdef FITS
-                if (fail) {
-                    gr->GetFunction("fit")->SetLineColor(kRed);
-                    printf("Failed to fit on %s strip %i\n", channel.c_str(), istrip);
-                }
-                else {
-                    gr->GetFunction("fit")->SetLineColor(kGreen+3);
-                }
-#endif
-
-                if (fail) {
-                    fit_width  [istrip] = f1->GetParameter(0);
-                    fit_thresh [istrip] = f1->GetParameter(1);
-                    std::cout << "fail xmax=" << fit_thresh[istrip] << std::endl;
-
-                }
-                else {
-                    fit_width  [istrip] = f1->GetParameter(0);
-                    fit_thresh [istrip] = f1->GetParameter(1);
-                }
-
-                //--------------------------------------------------------------------------------------------------------------
-
-                int iscan = (channel=="thresh_r" || channel=="thresh_l") ? test_thresh : test_offset;
-                double val = (fail) ? h1->GetXaxis()->GetXmax() - 1e-9 : convertBin(iscan, fit_thresh[istrip]);
-
-                h1->Fill(val);
-
-#ifdef DRAWFITS
-                if (channel=="offset_l") {
-                    c2->cd(istrip+1);
-                    gPad->DrawFrame(0,0, 300, 1.1);
-                    gr->Draw("SAME, *A");
-                    gr-> SetMarkerStyle(3);
-                }
-                else if (channel=="offset_r") {
-                    c3->cd(istrip+1);
-                    gPad->DrawFrame(0,0, 300, 1.1);
-                    gr->Draw("SAME, *A");
-                    gr-> SetMarkerStyle(3);
-                }
-                else if (channel=="thresh_l") {
-                    c4->cd(istrip+1);
-                    gPad->DrawFrame(0,0, 300, 1.1);
-                    gr->Draw("SAME, *A");
-                    gr-> SetMarkerStyle(3);
-                }
-                else if (channel=="thresh_r") {
-                    c5->cd(istrip+1);
-                    gPad->DrawFrame(0,0, 300, 1.1);
-                    gr->Draw("SAME, *A");
-                    gr-> SetMarkerStyle(3);
-                }
-                gSystem->ProcessEvents();
-#endif
-
-                c1->cd(ipad);
-
-                TMarker * mark = new TMarker (0.5+double(istrip), val, 3);
-
-                TAxis *yaxis = h2->GetYaxis();
-                Double_t binCenter = yaxis->GetBinCenter(50);
-
-                if (fail) {
-                    mark->SetY (-1 * binCenter);
-                    mark->SetMarkerColor(kRed);
-                    mark->SetMarkerSize(2);
-                }
-
-                mark->Draw("SAME");
-
-            }
-
-            c1->cd (4+ipad);
-            h1->SetFillColor(kBlue-10);
-            h1->Draw();
-            c1->Update();
-
-            double xmin = mean[channel] - spread[channel];
-            double xmax = mean[channel] + spread[channel];
-            drawLimitVlines(gPad, xmin, xmax);
-
-            gSystem->ProcessEvents();
-
-            ipad++;
-    }
-
-    c1->cd();
-
     outfile->Write();
-//    hfile->Write("",TObject::kOverwrite);
-
 }
