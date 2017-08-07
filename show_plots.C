@@ -17,6 +17,7 @@
 
 #define FITS 1
 #define DRAWFITS 1
+const bool DRAW = 0;
                   //int argc, char* argv []
 
 void show_plots () {
@@ -28,19 +29,22 @@ void show_plots () {
     //std::string logfile = std::string("./results/") + name + ".root";
 
     TFile* outfile = new TFile("tmp2.root","RECREATE","LCT Comparator Test Results");
-
+    #ifdef DRAW
     TCanvas * c1 = new TCanvas ();
     c1->SetWindowSize(512*2,512*2);
     c1->Divide(2,2);
     c1->cd();
+    #endif
 
     //------------------------------------------------------------------------------------------------------------------
     // Currents
     //------------------------------------------------------------------------------------------------------------------
 
+    #ifdef DRAW
     TCanvas * c_currents = new TCanvas ();
     c_currents->SetWindowSize(512*3,512*2);
     c_currents->Divide(3,2);
+    #endif
 
     TH1F* iamp  = (TH1F*) hfile -> Get ("iamp") -> Clone();
     TH1F* ioff  = (TH1F*) hfile -> Get ("ioff") -> Clone();
@@ -69,9 +73,11 @@ void show_plots () {
         xmin = mean[channel] - spread[channel];
         xmax = mean[channel] + spread[channel];
 
+    #ifdef DRAW
         c_currents->cd(i+1);
 
         currents_map[channel] ->Draw();
+     #endif
 
         TH1F* h1 = currents_map[channel];
         if ( h1->GetXaxis()->GetBinCenter(h1->FindFirstBinAbove(0,1))   < xmin ||
@@ -82,33 +88,40 @@ void show_plots () {
 
         currents_map[channel] ->SetDirectory(outfile->GetDirectory(""));
 
+    #ifdef DRAW
         c_currents->Update();
 
-
         drawLimitVlines ( gPad, xmin, xmax);
+
+#endif
 
         i++;
     }
 
+    #ifdef DRAW
     c_currents->Update();
+    #endif
     gSystem->ProcessEvents();
 
     //------------------------------------------------------------------------------------------------------------------
     // Misc Plots
     //------------------------------------------------------------------------------------------------------------------
-
+    #ifdef DRAW
     TCanvas * c9 = new TCanvas ();
     c9->SetWindowSize(512*2, 512*2);
     c9->Divide(2,2);
     c9->cd();
+#endif
 
     //-PEAK TIMING------------------------------------------------------------------------------------------------------
 
     TH2F* h2_timing = (TH2F*) hfile -> Get ("h2_timing");
     h2_timing->SetStats(0);
+    #ifdef DRAW
     c9->cd(1);
-    h2_timing->SetOption("COLZ");
     h2_timing->Draw();
+    #endif
+    h2_timing->SetOption("COLZ");
     h2_timing ->SetDirectory(outfile->GetDirectory(""));
 
     //-PEAK MODE--------------------------------------------------------------------------------------------------------
@@ -135,15 +148,19 @@ void show_plots () {
     h2_mode->SetContour(100);
 
     h2_mode->SetStats(0);
+    #ifdef DRAW
     c9->cd(2);
     h2_mode->SetOption("COLZ");
     h2_mode->Draw();
+    #endif
     h2_mode ->SetDirectory(outfile->GetDirectory(""));
 
 
     //-COMPIN-----------------------------------------------------------------------------------------------------------
 
+    #ifdef DRAW
     c9->cd (3);
+    #endif
 
     TH2F* compin = (TH2F*) hfile -> Get ("h2_compin");
 
@@ -151,14 +168,18 @@ void show_plots () {
 
     compin->SetOption("COLZ");
     compin ->SetDirectory(outfile->GetDirectory(""));
+    #ifdef DRAW
     compin->Draw();
 
     c9->Update();
+    #endif
     gSystem->ProcessEvents();
 
     //-COMPOUT----------------------------------------------------------------------------------------------------------
 
+    #ifdef DRAW
     c9->cd (4);
+    #endif
 
     TH2F* compout = (TH2F*) hfile -> Get ("h2_compout");
 
@@ -167,10 +188,14 @@ void show_plots () {
 
     compout->SetOption("COLZ");
     compout->SetContour(100);
+    #ifdef DRAW
     compout->Draw();
+    #endif
 
+    #ifdef DRAW
     c9->Update();
     gSystem->ProcessEvents();
+    #endif
 
     //------------------------------------------------------------------------------------------------------------------
     // Thresholds & Offsets
@@ -204,28 +229,42 @@ void show_plots () {
     int ipad=1;
     for (auto & channel : meas_vec) {
 
+    #ifdef DRAW
         c1->cd(ipad);
+    #endif
 
         TH2F* h2 = meas_map[channel];
         h2 -> SetOption("COLZ");
         h2->SetContour(100);
+    #ifdef DRAW
         h2->Draw();
         c1->Update();
+    #endif
 
         double ymin = mean[channel] - spread[channel];
         double ymax = mean[channel] + spread[channel];
+    #ifdef DRAW
         drawLimitHlines(gPad, ymin, ymax);
+    #endif
 
         ipad++;
     }
 
+    #ifdef DRAW
     c1->Modified();
     c1->Update();
+    #endif
 
     // draw now
     gSystem->ProcessEvents();
 
+    #ifdef DRAW
     c1->cd(5);
+    #endif
 
     outfile->Write();
+}
+
+int main () {
+    show_plots();
 }

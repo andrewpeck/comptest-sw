@@ -9,7 +9,8 @@ fi
 MODEM=$(ls /dev/cu.usbmodem* | head -n 1)
 echo "Running test on $MODEM"
 time ./test_controller $MODEM &&
-root -l './show_plots.C'
+#root -l './show_plots.C'
+./show_plots
 ./fit_raws $NAME
 #root -l './fit_raws.C+ ("'$NAME'")'
 root -l './analyzer.C  ("./results/'$NAME'.root")'

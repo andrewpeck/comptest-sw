@@ -26,10 +26,10 @@ void analyzer (std::string path="./results/*") {
 
     int fname_start = path.find_last_of("\\/");
 
-    std::cout << path.substr(0, fname_start+1) << std::endl;
-    std::cout << path.substr(0, fname_start+1) << std::endl;
+    std::cout << "directory=" << path.substr(0, fname_start+1) << std::endl;
+    std::cout << "mask     =" << path.substr(fname_start+1) << std::endl;
 
-    std::string directory = path.substr(0, fname_start+1);
+    std::string directory = path.substr(0,fname_start+1);
     std::string file      = path.substr(fname_start+1);
 
     TRegexp fexp (file.c_str(), true);
@@ -54,6 +54,8 @@ void analyzer (std::string path="./results/*") {
         while ((file=(TSystemFile*)next())) {
 
             fname = file->GetName();
+
+            std::cout << fname << std::endl;
 
             if (!(file->IsDirectory()) && fname.EndsWith(".root") && fname.Contains(fexp)) {
                 std::cout << "    " << std::string(fname.Data()) << std::endl;
@@ -102,6 +104,7 @@ void analyzer (std::string path="./results/*") {
     int num_files = 0;
     for(auto const& filename: file_vec) {
 
+        std::cout << "Processing histograms of " << filename << std::endl;
         num_files ++;
 
         TFile* hfile = new TFile(filename.c_str(),"READ","");
@@ -199,6 +202,19 @@ void analyzer (std::string path="./results/*") {
 
         }
 
+        if ( ((TH1F*) hfile->Get("th1_thresh_l"))->GetXaxis()->GetBinCenter(((TH1F*) hfile->Get("th1_thresh_l"))->FindFirstBinAbove(0,1)-1)   < mean["thresh_l"] - spread["thresh_l"] ||
+             ((TH1F*) hfile->Get("th1_thresh_l"))->GetXaxis()->GetBinCenter(((TH1F*) hfile->Get("th1_thresh_l"))->FindLastBinAbove (0,1)+1)   > mean["thresh_l"] + spread["thresh_l"])
+            printf("Bin out of limit on th1_thresh_l, %s\n", filename.c_str());
+        if ( th1_thresh_r->GetXaxis()->GetBinCenter(((TH1F*) hfile->Get("th1_thresh_r"))->FindFirstBinAbove(0,1)-1)   < mean["thresh_r"] - spread["thresh_r"] ||
+             ((TH1F*) hfile->Get("th1_thresh_r"))->GetXaxis()->GetBinCenter(((TH1F*) hfile->Get("th1_thresh_r"))->FindLastBinAbove (0,1)+1)   > mean["thresh_r"] + spread["thresh_r"])
+            printf("Bin out of limit on th1_thresh_r, %s\n", filename.c_str());
+        if ( th1_offset_l->GetXaxis()->GetBinCenter(((TH1F*) hfile->Get("th1_offset_l"))->FindFirstBinAbove(0,1)-1)   < mean["offset_l"] - spread["offset_l"] ||
+             ((TH1F*) hfile->Get("th1_offset_l"))->GetXaxis()->GetBinCenter(((TH1F*) hfile->Get("th1_offset_l"))->FindLastBinAbove (0,1)+1)   > mean["offset_l"] + spread["offset_l"])
+            printf("Bin out of limit on th1_offset_l, %s\n", filename.c_str());
+        if ( th1_offset_r->GetXaxis()->GetBinCenter(((TH1F*) hfile->Get("th1_offset_r"))->FindFirstBinAbove(0,1)-1)   < mean["offset_r"] - spread["offset_r"] ||
+             ((TH1F*) hfile->Get("th1_offset_r"))->GetXaxis()->GetBinCenter(((TH1F*) hfile->Get("th1_offset_r"))->FindLastBinAbove (0,1)+1)   > mean["offset_r"] + spread["offset_r"])
+            printf("Bin out of limit on th1_offset_r, %s\n", filename.c_str());
+
         hfile->Close();
     }
 
@@ -252,6 +268,7 @@ void analyzer (std::string path="./results/*") {
 
         xmin = mean[channel] - spread[channel];
         xmax = mean[channel] + spread[channel];
+
 
         drawLimitVlines (gPad, xmin, xmax);
 

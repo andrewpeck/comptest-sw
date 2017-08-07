@@ -9,12 +9,12 @@ static std::vector<std::string> currents_vec = {"iamp", "ioff", "ibias", "ifamp"
 static std::vector<std::string> meas_vec     = {"offset_l", "offset_r", "thresh_l", "thresh_r"};
 
 static std::map <std::string, float> mean = {
-        {"iamp"  , 48.77 },
-        {"ioff"  , 7.3   },
-        {"ibias" , 6.831 },
-        {"ifamp" , 10.27 },
-        {"i5v0"  , 41.8  },
-        {"i3v3"  , 20.7  },
+        {"iamp"  , 48    }, // 48.77 for 2001 chips
+        {"ioff"  , 7.225 },
+        {"ibias" , 6.728 },
+        {"ifamp" , 10.13 },
+        {"i5v0"  , 40.3  },
+        {"i3v3"  , 20.4  },
         {"thresh_l", 7.5},
         {"thresh_r", 7.5},
         {"offset_l", 2.0},
@@ -22,15 +22,15 @@ static std::map <std::string, float> mean = {
 };
 
 static std::map <std::string, float> spread = {
-        {"iamp"   , 0.5 },
-        {"ioff"   , 0.1 },
-        {"ibias"  , 0.09},
-        {"ifamp"  , 0.07},
+        {"iamp"   , 0.9 }, // microamp
+        {"ioff"   , 0.08}, // microamp
+        {"ibias"  , 0.15},
+        {"ifamp"  , 0.18},
         {"i5v0"   , 3.0 },
         {"i3v3"   , 2.0 },
         {"thresh_l" , 5},
         {"thresh_r" , 5},
-        {"offset_l", 2.0},
+        {"offset_l", 2.8},
         {"offset_r", 0.6},
 };
 

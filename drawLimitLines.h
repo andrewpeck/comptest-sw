@@ -8,6 +8,8 @@ inline void drawLimitVlines (TVirtualPad* gpad, double xlow=0, double xhigh=0) {
 
     double ymax = gpad->GetUymax();
 
+    if (xlow<0) xlow=0;
+
     TLine* llow  = new TLine (xlow,  0, xlow,  ymax);
     TLine* lhigh = new TLine (xhigh, 0, xhigh, ymax);
 
@@ -23,6 +25,8 @@ inline void drawLimitVlines (TVirtualPad* gpad, double xlow=0, double xhigh=0) {
 inline void drawLimitHlines (TVirtualPad* gpad, double ylow=0, double yhigh=0) {
 
     double xmax = gpad->GetUxmax();
+
+    if (ylow<0) ylow=0;
 
     TLine* llow  = new TLine (0   ,ylow,  xmax, ylow);
     TLine* lhigh = new TLine (0   ,yhigh, xmax, yhigh);
